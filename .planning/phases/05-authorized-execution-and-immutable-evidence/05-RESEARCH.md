@@ -1,7 +1,7 @@
 # Phase 5: Authorized Execution and Immutable Evidence - Research
 
-**Researched:** 2026-08-04  
-**Domain:** local-only immutable execution evidence and no-call enforcement  
+**Researched:** 2026-08-04
+**Domain:** local-only immutable execution evidence and no-call enforcement
 **Confidence:** HIGH
 
 <user_constraints>
@@ -218,37 +218,37 @@ write_exact_descriptor_files(root, payloads)
 
 ### Pitfall 1: Accepting a Merely Similar Authority
 
-**What goes wrong:** A planner reads an older v1–v5 artifact, a copy of the v6 JSON, or an unvalidated object and treats it as current authority.  
-**Why it happens:** The repository deliberately preserves historical predecessor and failed-publication evidence.  
-**How to avoid:** Require the persisted v6 decision/readiness/authority bytes, call the v6 validator, and reject any non-exact object before staging.  
+**What goes wrong:** A planner reads an older v1–v5 artifact, a copy of the v6 JSON, or an unvalidated object and treats it as current authority.
+**Why it happens:** The repository deliberately preserves historical predecessor and failed-publication evidence.
+**How to avoid:** Require the persisted v6 decision/readiness/authority bytes, call the v6 validator, and reject any non-exact object before staging.
 **Warning signs:** Missing/unknown authority keys, a different self-hash, or any v1–v5 fallback. [VERIFIED: experiments/specchoice-v1.3.2/src/specchoice_treatments/h3.py:2740-2777; 3175-3195; .planning/phases/04-offline-treatments-retrieval-and-branch-freeze/04-VERIFICATION.md:36-41]
 
 ### Pitfall 2: Calling the Ledger Empty While Leaving a Reachable Network Path
 
-**What goes wrong:** A zero-row ledger alone cannot prove that the code lacked a provider/model/credential/retrieval surface or that runtime socket creation would stop.  
-**Why it happens:** Phase 4's current audit checks a different source/CLI closure and tests a patched `socket.create_connection` only around its own audit.  
-**How to avoid:** Rescan all Phase 5 execution files and CLI surfaces, reject forbidden imports/config paths, and add a dedicated all-socket tripwire test suite.  
+**What goes wrong:** A zero-row ledger alone cannot prove that the code lacked a provider/model/credential/retrieval surface or that runtime socket creation would stop.
+**Why it happens:** Phase 4's current audit checks a different source/CLI closure and tests a patched `socket.create_connection` only around its own audit.
+**How to avoid:** Rescan all Phase 5 execution files and CLI surfaces, reject forbidden imports/config paths, and add a dedicated all-socket tripwire test suite.
 **Warning signs:** New network-related import, CLI subcommand, provider/config/credential path, process spawn, or a tripwire event. [VERIFIED: .planning/phases/05-authorized-execution-and-immutable-evidence/05-CONTEXT.md:25-28; experiments/specchoice-v1.3.2/src/specchoice_treatments/h3.py:268-387; experiments/specchoice-v1.3.2/tests/test_treatments_h3.py:143-153]
 
 ### Pitfall 3: Hiding a Failed Retry in Staging Cleanup
 
-**What goes wrong:** An exception removes evidence of the first attempt and a later successful execution appears as the only history.  
-**Why it happens:** The legacy measurement writer deletes its temporary directory in its exception handler.  
-**How to avoid:** Persist a self-validating failed package to an immutable attempt identifier before returning a stable failure; bind every prior attempt into the terminal receipt.  
+**What goes wrong:** An exception removes evidence of the first attempt and a later successful execution appears as the only history.
+**Why it happens:** The legacy measurement writer deletes its temporary directory in its exception handler.
+**How to avoid:** Persist a self-validating failed package to an immutable attempt identifier before returning a stable failure; bind every prior attempt into the terminal receipt.
 **Warning signs:** No failed-attempt artifact after a fault, a reused attempt ID, or a terminal receipt that lists only the final attempt. [VERIFIED: experiments/specchoice-v1.3.2/src/specchoice_measurement/attempts.py:212-241; .planning/phases/05-authorized-execution-and-immutable-evidence/05-CONTEXT.md:39-42]
 
 ### Pitfall 4: Treating Zero Cells as Requirement Closure
 
-**What goes wrong:** TS-11/TS-12 are marked permanently complete, or a fake placeholder call is emitted to make a matrix look populated.  
-**Why it happens:** Green/Yellow call-matrix expectations are mistaken for Red's evidence-only branch.  
-**How to avoid:** Emit the canonical empty matrix and machine-readable conditional state, retain no raw response/call artifacts, and defer permanent closure to Phase 7.  
+**What goes wrong:** TS-11/TS-12 are marked permanently complete, or a fake placeholder call is emitted to make a matrix look populated.
+**Why it happens:** Green/Yellow call-matrix expectations are mistaken for Red's evidence-only branch.
+**How to avoid:** Emit the canonical empty matrix and machine-readable conditional state, retain no raw response/call artifacts, and defer permanent closure to Phase 7.
 **Warning signs:** `actual_cells` nonzero, a raw response leaf, a model metric, or a status other than the locked conditional state. [VERIFIED: .planning/phases/05-authorized-execution-and-immutable-evidence/05-CONTEXT.md:32-35]
 
 ### Pitfall 5: Using an unpinned local toolchain as the phase gate
 
-**What goes wrong:** Local validation is claimed green under a runtime different from the repository's declared contract.  
-**Why it happens:** The current shell exposes Python 3.11.14 and Ruff 0.12.0, while the project declares Python `>=3.12` and Ruff `0.16.0`.  
-**How to avoid:** Restore/use the repository-pinned toolchain before Phase 5 validation; do not downgrade the gate to match the ambient shell.  
+**What goes wrong:** Local validation is claimed green under a runtime different from the repository's declared contract.
+**Why it happens:** The current shell exposes Python 3.11.14 and Ruff 0.12.0, while the project declares Python `>=3.12` and Ruff `0.16.0`.
+**How to avoid:** Restore/use the repository-pinned toolchain before Phase 5 validation; do not downgrade the gate to match the ambient shell.
 **Warning signs:** `python3 --version` below 3.12 or `ruff --version` below 0.16.0. [VERIFIED: environment audit 2026-08-04; pyproject.toml:4-20]
 
 ## Code Examples
@@ -406,5 +406,5 @@ The existing validator checks the exact declared key set, the v6 schema version,
 - Architecture: HIGH — locked Context plus direct source inspection identifies the exact authority, canonicalization, filesystem, closure, parser, and diagnostics seams. [VERIFIED: .planning/phases/05-authorized-execution-and-immutable-evidence/05-CONTEXT.md:89-111; experiments/specchoice-v1.3.2/src/specchoice_treatments/h3.py:3175-3195]
 - Pitfalls: HIGH — they follow from explicit formal-completion/no-call/retry constraints and the direct comparison with the legacy attempt writer. [VERIFIED: .planning/phases/05-authorized-execution-and-immutable-evidence/05-CONTEXT.md:18-42; experiments/specchoice-v1.3.2/src/specchoice_measurement/attempts.py:168-241]
 
-**Research date:** 2026-08-04  
+**Research date:** 2026-08-04
 **Valid until:** 2026-09-03, unless the v6 authority, Phase 5 Context, or toolchain contract changes first. [VERIFIED: experiments/specchoice-v1.3.2/phase4/branch-authority-v6.json:1; pyproject.toml:4-20]
