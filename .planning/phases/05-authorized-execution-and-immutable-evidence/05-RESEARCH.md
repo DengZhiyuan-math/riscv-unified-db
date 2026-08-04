@@ -300,10 +300,10 @@ The existing validator checks the exact declared key set, the v6 schema version,
 
 ## Open Questions
 
-1. **Pinned validation runtime is unavailable in the current shell.**
+1. **Planning resolution — record a fail-closed pinned-toolchain preflight before the tracer.**
    - What we know: The project requires Python `>=3.12` and pins Ruff `0.16.0`; the ambient shell reports Python 3.11.14 and Ruff 0.12.0. [VERIFIED: pyproject.toml:4-20; environment audit 2026-08-04]
-   - What's unclear: Whether the repository's intended `uv`/setup environment can be restored locally without violating the no-network execution boundary.
-   - Recommendation: Make restoration of the pinned local developer toolchain a Wave 0/pre-execution prerequisite. Do not let the implementation run a package installation, network call, or model call as part of Phase 5 evidence construction. [VERIFIED: AGENTS.md:16-22; .planning/phases/05-authorized-execution-and-immutable-evidence/05-CONTEXT.md:9]
+   - Planning resolution: Plan 05-00 consumes only already-restored `.venv/bin/python` and `.venv/bin/ruff`, verifies Python `>=3.12` and exact Ruff `0.16.0`, records their repository-relative identities/versions and `pyproject.toml` hash in a planning-only non-authoritative preflight record, and fails before the tracer or any experiment writer/target when unavailable or mismatched. It performs no installation or network access and creates no experiment authority.
+   - Execution prerequisite: Actual local tool restoration remains outside formal Phase 5 execution and must be completed before Plan 05-00 starts. The planning procedure resolves how the gate is checked and recorded; it does not claim restoration has occurred. [VERIFIED: AGENTS.md:16-22; .planning/phases/05-authorized-execution-and-immutable-evidence/05-CONTEXT.md:9]
 
 2. **Socket-tripwire coverage must be proven, not assumed.**
    - What we know: The previous test patches `socket.create_connection` and asserts it is unused; D-06 raises the contract to every socket operation. [VERIFIED: experiments/specchoice-v1.3.2/tests/test_treatments_h3.py:143-153; .planning/phases/05-authorized-execution-and-immutable-evidence/05-CONTEXT.md:25-27]
@@ -321,7 +321,7 @@ The existing validator checks the exact declared key set, the v6 schema version,
 
 **Missing dependencies with no fallback:**
 
-- The pinned Python/Ruff validation toolchain is absent from the ambient shell. The planner must include a non-evidence prerequisite or explicitly pause before Phase 5 execution. [VERIFIED: environment audit 2026-08-04; pyproject.toml:4-20]
+- The pinned Python/Ruff validation toolchain is absent from the ambient shell. Plan 05-00 therefore requires prior local `.venv` restoration, then verifies and records the pinned tools as a non-authoritative execution precondition before the tracer. [VERIFIED: environment audit 2026-08-04; pyproject.toml:4-20]
 
 **Missing dependencies with fallback:**
 
@@ -335,16 +335,16 @@ The existing validator checks the exact declared key set, the v6 schema version,
 |---|---|
 | Framework | Python standard-library `unittest`; repository project contract Python `>=3.12`. [VERIFIED: .planning/phases/04-offline-treatments-retrieval-and-branch-freeze/04-VALIDATION.md:22-25; pyproject.toml:4-8] |
 | Config file | `pyproject.toml` for Ruff; no unittest config, tests use `PYTHONPATH=src`. [VERIFIED: pyproject.toml:22-24; .planning/phases/04-offline-treatments-retrieval-and-branch-freeze/04-VALIDATION.md:22-25] |
-| Quick run command | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python3 -m unittest tests.test_authorized_execution tests.test_treatments_h3 tests.test_canonical tests.test_filesystem_boundary -q` [ASSUMED] |
-| Full suite command | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python3 -m unittest tests.test_data_admission tests.test_data_splits tests.test_data_relevance tests.test_data_h2 tests.test_treatments_frame tests.test_treatments_prompts tests.test_treatments_retrieval tests.test_treatments_h3 tests.test_authorized_execution tests.test_canonical tests.test_filesystem_boundary -q && ruff check --isolated src/specchoice_execution tests/test_authorized_execution.py && git diff --check` [ASSUMED] |
+| Quick run command | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_authorized_execution tests.test_treatments_h3 tests.test_canonical tests.test_filesystem_boundary -q` [ASSUMED] |
+| Full suite command | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_data_admission tests.test_data_splits tests.test_data_relevance tests.test_data_h2 tests.test_treatments_frame tests.test_treatments_prompts tests.test_treatments_retrieval tests.test_treatments_h3 tests.test_authorized_execution tests.test_canonical tests.test_filesystem_boundary -q && ../../.venv/bin/ruff check --isolated src/specchoice_execution tests/test_authorized_execution.py && git diff --check` [ASSUMED] |
 
 ### Phase Requirements → Test Map
 
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |---|---|---|---|---|
-| TS-07 | Separate raw-byte custody (when produced), parsed output, diagnostics, security events, immutable trigger evidence, and no fabricated raw response in a zero-call attempt. | unit/integration/adversarial | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python3 -m unittest tests.test_authorized_execution -q` [ASSUMED] | ❌ Wave 0 |
-| TS-11 | Exact v6 Red admission produces `expected_cells=0`, `actual_cells=0`, no placeholder cell, and conditional Phase-7 requirement status. | unit/integration | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python3 -m unittest tests.test_authorized_execution tests.test_treatments_h3 -q` [ASSUMED] | ❌ Wave 0 |
-| TS-12 | Empty real-call ledger, structural scan, all-socket tripwire, blocked-event failed custody, and complete ordered retry chain fail closed. | security/runtime/adversarial | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python3 -m unittest tests.test_authorized_execution tests.test_filesystem_boundary -q` [ASSUMED] | ❌ Wave 0 |
+| TS-07 | Separate raw-byte custody (when produced), parsed output, diagnostics, security events, immutable trigger evidence, and no fabricated raw response in a zero-call attempt. | unit/integration/adversarial | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_authorized_execution -q` [ASSUMED] | ❌ Wave 0 |
+| TS-11 | Exact v6 Red admission produces `expected_cells=0`, `actual_cells=0`, no placeholder cell, and conditional Phase-7 requirement status. | unit/integration | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_authorized_execution tests.test_treatments_h3 -q` [ASSUMED] | ❌ Wave 0 |
+| TS-12 | Empty real-call ledger, structural scan, all-socket tripwire, blocked-event failed custody, and complete ordered retry chain fail closed. | security/runtime/adversarial | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_authorized_execution tests.test_filesystem_boundary -q` [ASSUMED] | ❌ Wave 0 |
 
 ### Sampling Rate
 
@@ -356,7 +356,7 @@ The existing validator checks the exact declared key set, the v6 schema version,
 
 - [ ] `experiments/specchoice-v1.3.2/tests/test_authorized_execution.py` — authority/closure admission, zero ledger/matrix, receipt, failed-custody, resume, drift, and tripwire coverage. [ASSUMED]
 - [ ] Final selected Phase 5 module/schema names and their inclusion in the closure inventory. [ASSUMED]
-- [ ] Repository-pinned Python/Ruff developer toolchain. [VERIFIED: environment audit 2026-08-04; pyproject.toml:4-20]
+- [ ] Execute the recorded Plan 05-00 fail-closed check after repository-local `.venv` restoration; planning the procedure does not satisfy the gate. [VERIFIED: environment audit 2026-08-04; pyproject.toml:4-20]
 
 ## Security Domain
 

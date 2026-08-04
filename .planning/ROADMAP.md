@@ -297,12 +297,20 @@ Plans:
   3. On Green/Yellow, the reviewer can inspect each call's prompt hash, model snapshot, sampling and output settings, actual token use, raw response, parse result, refusal/truncation state, and retry/failure state.
   4. On Red, the reviewer can verify an empty real-model call ledger and preserved runner, construction, ambiguity, and trigger evidence; the G/Y requirements remain conditional until Phase 7 validates Red closure.
 
-**Plans:** 3 plans
+**Plans:** 4 plans
 
 Plans:
+**Wave 1**
 
+- [ ] 05-00: Verify and record the already-restored pinned local toolchain before the tracer, without experiment authority.
 - [ ] 05-01: Implement freeze-root verification, immutable envelopes, raw-first persistence, and the stable execution plan.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 05-02: Execute the authorized strict A/B/C matrix or the Red no-call branch without crossing the gate.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 05-03: Audit cell completeness, call metadata, evidence lineage, replayability, and drift-triggered stop behavior.
 
 ### Phase 6: Partition-Aware Ablation and Metamorphic Evaluation
@@ -393,6 +401,6 @@ Plans:
 | 2. Deterministic Measurement Spine | 22/22 | Complete | 2026-08-03 |
 | 3. Human-Reviewed Data Preregistration | 4/4 | Complete   | 2026-08-04 |
 | 4. Offline Treatments, Retrieval, and Branch Freeze | 4/4 | Complete    | 2026-08-04 |
-| 5. Authorized Execution and Immutable Evidence | 0/3 | Not started | - |
+| 5. Authorized Execution and Immutable Evidence | 0/4 | Not started | - |
 | 6. Partition-Aware Ablation and Metamorphic Evaluation | 0/4 | Not started | - |
 | 7. Reproducible Feasibility Conclusion | 0/3 | Not started | - |
