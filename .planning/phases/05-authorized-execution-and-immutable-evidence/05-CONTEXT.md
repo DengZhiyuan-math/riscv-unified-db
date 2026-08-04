@@ -79,7 +79,7 @@ The planner may choose internal module names, CLI command names, schema decompos
 
 ### Known Unavailable Historical Reference
 
-- `/Users/zhdeng/Downloads/LFX_RISCV_SpecChoice_v1.3.2_frozen_execution_baseline.md` — Previously cited as the external frozen execution contract but absent on 2026-08-04. Do not reconstruct or guess its contents. Planning must rely on the repository-local, verified v6 authority chain above unless the exact external bytes are restored and independently bound by a successor decision.
+- `../../Downloads/LFX_RISCV_SpecChoice_v1.3.2_frozen_execution_baseline.md` — Previously cited as the external frozen execution contract but absent on 2026-08-04. Do not reconstruct or guess its contents. Planning must rely on the repository-local, verified v6 authority chain above unless the exact external bytes are restored and independently bound by a successor decision.
 
 </canonical_refs>
 
