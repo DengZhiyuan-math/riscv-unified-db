@@ -17,7 +17,7 @@ SpecChoice v1.3.2 proceeds through seven strict, dependency-ordered increments: 
 - [x] **Phase 1: Isolated Evidence Boundary and Source Integrity** - Establish a dependency-light experiment boundary and independently verifiable public inputs. (completed 2026-07-31)
 - [x] **Phase 2: Deterministic Measurement Spine** - Prove the frozen adjudication and diagnostic contract on all 11 fixtures before innovation. (completed 2026-08-03)
 - [x] **Phase 3: Human-Reviewed Data Preregistration** - Produce leakage-safe, provenance-rich data whose semantic decisions are explicitly human-approved. (completed 2026-08-04)
-- [ ] **Phase 4: Offline Treatments, Retrieval, and Branch Freeze** - Make the controlled treatments inspectable offline, freeze them, and select exactly one fail-closed branch.
+- [x] **Phase 4: Offline Treatments, Retrieval, and Branch Freeze** - Make the controlled treatments inspectable offline, freeze them, and select exactly one fail-closed branch. (completed 2026-08-04)
 - [ ] **Phase 5: Authorized Execution and Immutable Evidence** - Execute the approved Green/Yellow call matrix or preserve a verifiable Red no-call record.
 - [ ] **Phase 6: Partition-Aware Ablation and Metamorphic Evaluation** - Score the authorized branch without pooling partitions or collapsing distinct failure modes.
 - [ ] **Phase 7: Reproducible Feasibility Conclusion** - Deliver a byte-stable, claim-bounded positive, negative, or Red conclusion for human acceptance.
@@ -257,7 +257,7 @@ Plans:
   3. The reviewer can compare rendered A/B/C prompt bytes and verify equal demonstration counts, shared target/rules/decision space/evidence requirements, intended treatment-only differences, and measured natural token differences without padding.
   4. The gate records exactly one approved branch plus `N_strict` and repeats; Red makes production retrieval and the real-model adapter unreachable, while Green/Yellow cannot call a model before the separate H4 approval verifies.
 
-**Plans:** 4/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 
@@ -280,7 +280,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 04-04: Hash every treatment-affecting artifact and implement H3/H4 branch authorization with Red fail-closed enforcement.
+- [x] 04-04: Hash every treatment-affecting artifact and implement H3/H4 branch authorization with Red fail-closed enforcement.
 
 ### Phase 5: Authorized Execution and Immutable Evidence
 
@@ -392,7 +392,7 @@ Plans:
 | 1. Isolated Evidence Boundary and Source Integrity | 7/7 | Complete    | 2026-07-31 |
 | 2. Deterministic Measurement Spine | 22/22 | Complete | 2026-08-03 |
 | 3. Human-Reviewed Data Preregistration | 4/4 | Complete   | 2026-08-04 |
-| 4. Offline Treatments, Retrieval, and Branch Freeze | 4/4 | In Progress|  |
+| 4. Offline Treatments, Retrieval, and Branch Freeze | 4/4 | Complete    | 2026-08-04 |
 | 5. Authorized Execution and Immutable Evidence | 0/3 | Not started | - |
 | 6. Partition-Aware Ablation and Metamorphic Evaluation | 0/4 | Not started | - |
 | 7. Reproducible Feasibility Conclusion | 0/3 | Not started | - |
