@@ -8,6 +8,7 @@ import io
 import json
 import os
 import shutil
+import socket
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -16,7 +17,9 @@ from pathlib import Path
 from specchoice_evidence.canonical import canonical_json_bytes, sha256_bytes
 from specchoice_execution.red_v2 import (
     RedExecutionV2Error,
+    audit_red_execution_surface_v2,
     build_gate_a_projection_v2,
+    deny_all_sockets_v2,
 )
 
 
@@ -128,6 +131,65 @@ class AuthorizedExecutionV2Tests(unittest.TestCase):
             self.assertEqual(0, self._run(root)[0])
         after = {path: hashlib.sha256((EXPERIMENT / path).read_bytes()).hexdigest() for path in before}
         self.assertEqual(before, after)
+
+    def test_exact_replay_is_byte_identical_and_zero_write(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_experiment(directory)
+            self.assertEqual(0, self._run(root)[0])
+            paths = [root / FORMAL / name for name in sorted(path.name for path in (root / FORMAL).iterdir())]
+            paths.extend([root / RECEIPT, root / REPORT])
+            before = {path: (path.read_bytes(), path.stat().st_mtime_ns) for path in paths}
+            self.assertEqual(0, self._run(root)[0])
+            self.assertEqual(before, {path: (path.read_bytes(), path.stat().st_mtime_ns) for path in paths})
+
+    def test_partial_symlink_and_traversal_targets_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_experiment(directory)
+            partial = root / FORMAL
+            partial.mkdir(parents=True)
+            (partial / "attempt-chain.json").write_bytes(b"{}\n")
+            self.assertEqual(2, self._run(root)[0])
+            self.assertEqual(b"{}\n", (partial / "attempt-chain.json").read_bytes())
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_experiment(directory)
+            (root / "runs").mkdir(exist_ok=True)
+            os.symlink("/tmp", root / FORMAL)
+            self.assertEqual(2, self._run(root)[0])
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_experiment(directory)
+            argv = self._argv()
+            argv[argv.index("--formal-root") + 1] = "runs/../escape"
+            self.assertEqual(2, self._run(root, argv)[0])
+
+    def test_all_socket_constructors_are_denied_without_real_calls(self) -> None:
+        for name, call in (
+            ("socket", lambda: socket.socket()),
+            ("create_connection", lambda: socket.create_connection(("127.0.0.1", 1))),
+            ("create_server", lambda: socket.create_server(("127.0.0.1", 0))),
+            ("socketpair", socket.socketpair),
+            ("fromfd", lambda: socket.fromfd(0, socket.AF_INET, socket.SOCK_STREAM)),
+        ):
+            events: list[dict[str, object]] = []
+            with self.assertRaisesRegex(RedExecutionV2Error, "RED_SOCKET_DENIED"), deny_all_sockets_v2(events):
+                call()
+            self.assertEqual([{"code": "RED_SOCKET_DENIED", "constructor": name, "event": "socket_operation"}], events)
+
+    def test_forbidden_surface_and_future_output_policy_membership_fail_before_write(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_experiment(directory)
+            cli = root / "src/specchoice_execution/cli_v2.py"
+            cli.write_text(cli.read_text() + "\nimport openai\n")
+            with self.assertRaisesRegex(RedExecutionV2Error, "RED_FORBIDDEN_SURFACE"):
+                audit_red_execution_surface_v2(root)
+            self.assertFalse((root / FORMAL).exists())
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_experiment(directory)
+            value = json.loads((root / POLICY).read_text())
+            value["closure_paths"].append("runs/red-execution-v2/attempt-chain.json")
+            value["closure_paths"].sort()
+            (root / POLICY).write_bytes(canonical_json_bytes(value))
+            with self.assertRaisesRegex(RedExecutionV2Error, "RED_POLICY_SELF_REFERENCE"):
+                build_gate_a_projection_v2(root)
 
 
 if __name__ == "__main__":
