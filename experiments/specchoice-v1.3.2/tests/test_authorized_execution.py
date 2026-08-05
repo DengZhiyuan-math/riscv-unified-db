@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import shutil
+import socket
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,7 +12,9 @@ from pathlib import Path
 from specchoice_evidence.canonical import canonical_json_bytes
 from specchoice_execution.red import (
     RedExecutionError,
+    audit_red_execution_surface_v1,
     build_red_evidence_v1,
+    deny_all_sockets_v1,
     validate_red_evidence_v1,
 )
 
@@ -113,6 +116,50 @@ class AuthorizedExecutionTests(unittest.TestCase):
             self.assertEqual(
                 canonical_json_bytes(first), canonical_json_bytes(second)
             )
+
+    def test_all_socket_constructors_and_address_classes_fail_closed(self) -> None:
+        constructors = (
+            lambda: socket.socket(),
+            lambda: socket.create_connection(("127.0.0.1", 1)),
+            lambda: socket.create_server(("192.168.1.2", 0)),
+            socket.socketpair,
+            lambda: socket.fromfd(0, socket.AF_INET, socket.SOCK_STREAM),
+        )
+        events: list[dict[str, object]] = []
+        with deny_all_sockets_v1(events):
+            for constructor in constructors:
+                with self.assertRaisesRegex(RedExecutionError, "RED_SOCKET_DENIED"):
+                    constructor()
+        self.assertEqual(5, len(events))
+        self.assertTrue(all(event["code"] == "RED_SOCKET_DENIED" for event in events))
+
+    def test_blocked_operations_are_security_events_not_calls(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_experiment(directory)
+            target = Path(directory) / "target"
+            target.mkdir()
+            with self.assertRaisesRegex(RedExecutionError, "RED_SOCKET_DENIED") as caught:
+                build_red_evidence_v1(
+                    root=root,
+                    output_root=target,
+                    socket_probe=lambda: socket.create_connection(("203.0.113.1", 443)),
+                )
+            failed_attempt = caught.exception.failed_attempt
+            self.assertEqual([], failed_attempt["model_call_ledger"]["calls"])
+            self.assertEqual(False, failed_attempt["authoritative"])
+            self.assertEqual(False, failed_attempt["metrics_emitted"])
+            self.assertEqual("RED_SOCKET_DENIED", failed_attempt["security_events"][0]["code"])
+            self.assertEqual(set(), set(target.iterdir()))
+
+    def test_phase5_structural_scan_covers_cli_config_dependencies_and_credentials(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_experiment(directory)
+            audit = audit_red_execution_surface_v1(root)
+            self.assertEqual([], audit["forbidden_findings"])
+            source = root / "src/specchoice_execution/cli.py"
+            source.write_text(source.read_text(encoding="utf-8") + "\nimport requests\n", encoding="utf-8")
+            with self.assertRaisesRegex(RedExecutionError, "RED_FORBIDDEN_SURFACE"):
+                audit_red_execution_surface_v1(root)
 
 
 if __name__ == "__main__":
