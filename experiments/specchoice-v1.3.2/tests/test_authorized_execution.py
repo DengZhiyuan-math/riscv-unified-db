@@ -122,7 +122,7 @@ class AuthorizedExecutionTests(unittest.TestCase):
             lambda: socket.socket(),
             lambda: socket.create_connection(("127.0.0.1", 1)),
             lambda: socket.create_server(("192.168.1.2", 0)),
-            socket.socketpair,
+            lambda: socket.socketpair(),
             lambda: socket.fromfd(0, socket.AF_INET, socket.SOCK_STREAM),
         )
         events: list[dict[str, object]] = []

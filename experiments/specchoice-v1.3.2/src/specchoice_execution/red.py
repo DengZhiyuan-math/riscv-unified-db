@@ -19,8 +19,11 @@ from specchoice_evidence.filesystem import (
     require_relative_posix_path,
     write_exact_descriptor_files,
 )
-from specchoice_evidence.runtime_closure import build_runtime_closure, verify_runtime_closure
-from specchoice_measurement.diagnostics import Diagnostic, ordered_diagnostics
+from specchoice_evidence.runtime_closure import (
+    build_runtime_closure,
+    verify_runtime_closure,
+)
+from specchoice_measurement.diagnostics import ordered_diagnostics
 from specchoice_measurement.strict_json import decode_strict_json
 from specchoice_treatments.h3 import (
     H3ValidationError,
@@ -33,6 +36,10 @@ from specchoice_treatments.h3 import (
 
 class RedExecutionError(ValueError):
     """Stable fail-closed error for the Phase 5 Red-only contract."""
+
+    def __init__(self, code: str, *, failed_attempt: dict[str, object] | None = None) -> None:
+        super().__init__(code)
+        self.failed_attempt = failed_attempt
 
 
 _POLICY_PATH = "config/execution/red-execution-policy-v1.json"
@@ -57,6 +64,8 @@ _OUTPUT_PATHS = (
     "runs/red-execution-v1/terminal-receipt.json",
     "runs/red-execution-v1/zero-cell-matrix.json",
 )
+_FORBIDDEN_IMPORT_ROOTS = frozenset({"boto3", "http", "importlib", "openai", "requests", "subprocess", "urllib"})
+_FORBIDDEN_CALLS = frozenset({"__import__", "eval", "exec"})
 
 
 def _is_integer(value: object) -> bool:
@@ -162,7 +171,7 @@ def validate_red_authority_v1(root: Path, policy: Mapping[str, object] | None = 
 
 
 def audit_red_execution_surface_v1(root: Path, policy: Mapping[str, object] | None = None) -> dict[str, object]:
-    """Bind the current finite source/config/test closure without adding a runtime."""
+    """Bind and scan the current finite source/config/test closure fail-closed."""
     policy = _policy(root) if policy is None else policy
     paths = policy.get("closure_paths")
     if not isinstance(paths, list):
@@ -172,19 +181,47 @@ def audit_red_execution_surface_v1(root: Path, policy: Mapping[str, object] | No
         verify_runtime_closure(closure, root)
     except (FilesystemPolicyError, ValueError) as error:
         raise RedExecutionError("RED_CLOSURE_DRIFT") from error
-    return {"closure": closure, "schema_version": "red-structural-audit-v1"}
+    findings: list[dict[str, object]] = []
+    for path in ("src/specchoice_execution/red.py", "src/specchoice_execution/cli.py"):
+        try:
+            _, raw = read_authoritative_file(root, path)
+            tree = ast.parse(raw.decode("utf-8"), filename=path)
+        except (FilesystemPolicyError, SyntaxError, UnicodeError) as error:
+            raise RedExecutionError("RED_FORBIDDEN_SURFACE") from error
+        for node in ast.walk(tree):
+            names: list[str] = []
+            if isinstance(node, ast.Import):
+                names = [item.name for item in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module is not None:
+                names = [node.module]
+            for name in names:
+                if name.split(".", 1)[0] in _FORBIDDEN_IMPORT_ROOTS:
+                    findings.append({"kind": "forbidden_import", "path": path, "value": name})
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in _FORBIDDEN_CALLS:
+                findings.append({"kind": "forbidden_dynamic_call", "path": path, "value": node.func.id})
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+                if isinstance(node.func.value, ast.Name) and node.func.value.id == "os" and node.func.attr in {"getenv", "popen", "system"}:
+                    findings.append({"kind": "forbidden_os_call", "path": path, "value": f"os.{node.func.attr}"})
+                if isinstance(node.func.value, ast.Name) and node.func.value.id == "importlib":
+                    findings.append({"kind": "forbidden_dynamic_import", "path": path, "value": node.func.attr})
+    if findings:
+        raise RedExecutionError("RED_FORBIDDEN_SURFACE")
+    return {"closure": closure, "forbidden_findings": [], "schema_version": "red-structural-audit-v1"}
 
 
 @contextlib.contextmanager
 def deny_all_sockets_v1(security_events: list[dict[str, object]]) -> Iterator[None]:
     """Deny every supported socket constructor before it reaches the OS."""
-    def denied(*_args: object, **_kwargs: object) -> object:
-        security_events.append({"code": "RED_SOCKET_DENIED", "event": "socket_operation"})
-        raise RedExecutionError("RED_SOCKET_DENIED")
+    def denied(constructor: str) -> Callable[..., object]:
+        def fail(*_args: object, **_kwargs: object) -> object:
+            security_events.append({"code": "RED_SOCKET_DENIED", "constructor": constructor, "event": "socket_operation"})
+            raise RedExecutionError("RED_SOCKET_DENIED")
+
+        return fail
 
     with contextlib.ExitStack() as stack:
         for name in ("socket", "create_connection", "create_server", "socketpair", "fromfd"):
-            stack.enter_context(patch.object(socket, name, denied))
+            stack.enter_context(patch.object(socket, name, denied(name)))
         yield
 
 
@@ -308,11 +345,35 @@ def validate_red_evidence_v1(*, root: Path | None = None, value: object | None =
     return value
 
 
-def build_red_evidence_v1(*, root: Path, output_root: Path, write_observer: Callable[[], None] | None = None) -> dict[str, object]:
+def build_red_evidence_v1(
+    *,
+    root: Path,
+    output_root: Path,
+    write_observer: Callable[[], None] | None = None,
+    socket_probe: Callable[[], object] | None = None,
+) -> dict[str, object]:
     """Build, validate, and atomically publish one disposable Red package."""
     policy = _policy(root)
     authority = validate_red_authority_v1(root, policy)
-    result, payloads = _build_result(root, policy, authority)
+    security_events: list[dict[str, object]] = []
+    try:
+        with deny_all_sockets_v1(security_events):
+            if socket_probe is not None:
+                socket_probe()
+            result, payloads = _build_result(root, policy, authority)
+    except RedExecutionError as error:
+        if str(error) != "RED_SOCKET_DENIED":
+            raise
+        raise RedExecutionError(
+            "RED_SOCKET_DENIED",
+            failed_attempt={
+                "authoritative": False,
+                "metrics_emitted": False,
+                "model_call_ledger": {"calls": [], "schema_version": "red-model-call-ledger-v1"},
+                "security_events": security_events,
+                "status": "failed",
+            },
+        ) from error
     validate_red_evidence_v1(value=result)
     if (_RESULT_PATH in enumerate_authoritative_files(output_root)):
         existing = validate_red_evidence_v1(root=output_root)

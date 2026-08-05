@@ -8,7 +8,10 @@ import sys
 from pathlib import Path
 
 from specchoice_evidence.canonical import canonical_json_bytes
-from specchoice_evidence.filesystem import FilesystemPolicyError, require_relative_posix_path
+from specchoice_evidence.filesystem import (
+    FilesystemPolicyError,
+    require_relative_posix_path,
+)
 
 from .red import RedExecutionError, build_red_evidence_v1
 
