@@ -17,6 +17,7 @@ from specchoice_execution.red import (
     deny_all_sockets_v1,
     validate_red_evidence_v1,
 )
+from specchoice_measurement.strict_json import decode_strict_json
 
 
 class AuthorizedExecutionTests(unittest.TestCase):
@@ -160,6 +161,21 @@ class AuthorizedExecutionTests(unittest.TestCase):
             source.write_text(source.read_text(encoding="utf-8") + "\nimport requests\n", encoding="utf-8")
             with self.assertRaisesRegex(RedExecutionError, "RED_FORBIDDEN_SURFACE"):
                 audit_red_execution_surface_v1(root)
+
+    def test_checkpoint_inventory_matches_policy_and_no_formal_target_exists(self) -> None:
+        policy = decode_strict_json(
+            (self.experiment / "config/execution/red-execution-policy-v1.json").read_bytes()
+        )
+        self.assertIsInstance(policy, dict)
+        assert isinstance(policy, dict)
+        self.assertEqual(
+            sorted(policy["output_paths"]),
+            policy["output_paths"],
+        )
+        for path in policy["output_paths"]:
+            self.assertFalse((self.experiment / path).exists(), path)
+        self.assertFalse((self.experiment / "receipts/red-execution-v1.json").exists())
+        self.assertFalse((self.experiment / "reports/red-execution").exists())
 
 
 if __name__ == "__main__":
