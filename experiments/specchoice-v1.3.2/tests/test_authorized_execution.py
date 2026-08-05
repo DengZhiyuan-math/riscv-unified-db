@@ -37,6 +37,7 @@ class AuthorizedExecutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = self._copy_experiment(directory)
             target = Path(directory) / "temporary-evidence"
+            target.mkdir()
             result = build_red_evidence_v1(root=root, output_root=target)
 
             self.assertEqual("completed", result["status"])
@@ -54,7 +55,9 @@ class AuthorizedExecutionTests(unittest.TestCase):
     def test_ts07_distinct_nonempty_spans_and_explicit_empty_set(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = self._copy_experiment(directory)
-            result = build_red_evidence_v1(root=root, output_root=Path(directory) / "target")
+            target = Path(directory) / "target"
+            target.mkdir()
+            result = build_red_evidence_v1(root=root, output_root=target)
             self.assertEqual([], result["parsed_evidence"]["findings"])
             self.assertEqual("explicit_empty_set", result["parsed_evidence"]["empty_set"])
             self.assertEqual([], result["evidence_span_audit"]["findings"])
@@ -69,9 +72,9 @@ class AuthorizedExecutionTests(unittest.TestCase):
 
     def test_zero_matrix_and_conditional_requirement_states(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            result = build_red_evidence_v1(
-                root=self._copy_experiment(directory), output_root=Path(directory) / "target"
-            )
+            target = Path(directory) / "target"
+            target.mkdir()
+            result = build_red_evidence_v1(root=self._copy_experiment(directory), output_root=target)
             matrix = result["matrix"]
             self.assertEqual(0, matrix["expected_cells"])
             self.assertEqual("0*3*0=0", matrix["formula"])
@@ -94,6 +97,7 @@ class AuthorizedExecutionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = self._copy_experiment(directory)
             target = Path(directory) / "target"
+            target.mkdir()
             first = build_red_evidence_v1(root=root, output_root=target)
             writes = 0
 
