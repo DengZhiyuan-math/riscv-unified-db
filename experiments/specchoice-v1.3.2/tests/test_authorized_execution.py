@@ -7,6 +7,7 @@ import shutil
 import socket
 import tempfile
 import unittest
+from copy import deepcopy
 from pathlib import Path
 
 from specchoice_evidence.canonical import canonical_json_bytes
@@ -15,6 +16,7 @@ from specchoice_execution.red import (
     audit_red_execution_surface_v1,
     build_red_evidence_v1,
     deny_all_sockets_v1,
+    execute_red_with_attempt_custody_v1,
     validate_red_evidence_v1,
 )
 from specchoice_measurement.strict_json import decode_strict_json
@@ -176,6 +178,113 @@ class AuthorizedExecutionTests(unittest.TestCase):
             self.assertFalse((self.experiment / path).exists(), path)
         self.assertFalse((self.experiment / "receipts/red-execution-v1.json").exists())
         self.assertFalse((self.experiment / "reports/red-execution").exists())
+
+    def test_every_failure_has_immutable_non_authoritative_custody(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_experiment(directory)
+            formal = Path(directory) / "formal"
+            formal.mkdir()
+            with self.assertRaisesRegex(RedExecutionError, "RED_SOCKET_DENIED") as caught:
+                execute_red_with_attempt_custody_v1(
+                    root=root,
+                    output_root=formal,
+                    socket_probe=lambda: socket.socket(),
+                )
+            failed = caught.exception.failed_attempt
+            assert failed is not None
+            self.assertEqual("attempt-000001", failed["attempt_id"])
+            self.assertFalse(failed["authoritative"])
+            self.assertFalse(failed["metrics_emitted"])
+            self.assertEqual([], failed["model_call_ledger"]["calls"])
+            self.assertEqual("RED_SOCKET_DENIED", failed["security_events"][0]["code"])
+            attempt = root / "runs/red-attempts/attempt-000001"
+            self.assertEqual(
+                {
+                    "attempt.json", "frozen-inputs.json", "model-call-ledger.json",
+                    "observed-differences.json", "ordered-diagnostics.json",
+                    "raw-custody.json", "security-events.json",
+                },
+                {path.name for path in attempt.iterdir()},
+            )
+            before = {path.name: path.read_bytes() for path in attempt.iterdir()}
+            with self.assertRaisesRegex(RedExecutionError, "RED_SOCKET_DENIED"):
+                execute_red_with_attempt_custody_v1(
+                    root=root,
+                    output_root=formal,
+                    socket_probe=lambda: socket.socket(),
+                )
+            self.assertEqual(before, {path.name: path.read_bytes() for path in attempt.iterdir()})
+            self.assertTrue((root / "runs/red-attempts/attempt-000002").is_dir())
+            self.assertFalse((formal / "runs/red-execution-v1").exists())
+
+    def test_retries_are_contiguous_append_only_and_input_identical(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_experiment(directory)
+            formal = Path(directory) / "formal"
+            formal.mkdir()
+            for _ in range(2):
+                with self.assertRaisesRegex(RedExecutionError, "RED_SOCKET_DENIED"):
+                    execute_red_with_attempt_custody_v1(
+                        root=root, output_root=formal, socket_probe=lambda: socket.socket()
+                    )
+            attempt_root = root / "runs/red-attempts"
+            first = attempt_root / "attempt-000001/attempt.json"
+            first.write_bytes(canonical_json_bytes({"tampered": True}))
+            with self.assertRaisesRegex(RedExecutionError, "RED_ATTEMPT_CHAIN_INVALID"):
+                execute_red_with_attempt_custody_v1(
+                    root=root, output_root=formal, socket_probe=lambda: socket.socket()
+                )
+
+    def test_drift_builds_decision_free_successor_only(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_experiment(directory)
+            formal = Path(directory) / "formal"
+            formal.mkdir()
+            expected = execute_red_with_attempt_custody_v1(
+                root=root, output_root=Path(directory) / "temporary"
+            )["frozen_inputs"]
+            changed = deepcopy(expected)
+            changed["policy_sha256"] = "0" * 64
+            with self.assertRaisesRegex(RedExecutionError, "RED_FROZEN_INPUT_DRIFT"):
+                execute_red_with_attempt_custody_v1(
+                    root=root,
+                    output_root=formal,
+                    expected_frozen_inputs=changed,
+                )
+            successor = root / "runs/red-successors/successor-001"
+            self.assertEqual(
+                {"candidate-closure.json", "observed-differences.json", "readiness.json"},
+                {path.name for path in successor.iterdir()},
+            )
+            readiness = decode_strict_json((successor / "readiness.json").read_bytes())
+            self.assertEqual(False, readiness["authoritative"])
+            self.assertEqual(False, readiness["metrics_emitted"])
+            self.assertNotIn("authority", readiness)
+            self.assertFalse((formal / "runs/red-execution-v1").exists())
+
+    def test_clean_success_leaves_conditional_namespaces_absent_and_roles_confined(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_experiment(directory)
+            formal = Path(directory) / "formal"
+            formal.mkdir()
+            result = execute_red_with_attempt_custody_v1(root=root, output_root=formal)
+            self.assertEqual("completed", result["status"])
+            self.assertFalse((root / "runs/red-attempts").exists())
+            self.assertFalse((root / "runs/red-successors").exists())
+            self.assertEqual([], result["attempt_chain"]["attempts"])
+
+    def test_occupied_partial_symlink_interrupted_and_concurrent_targets_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = self._copy_experiment(directory)
+            formal = Path(directory) / "formal"
+            formal.mkdir()
+            partial = formal / "runs/red-execution-v1"
+            partial.mkdir(parents=True)
+            (partial / "manifest.json").write_bytes(b"{}\n")
+            with self.assertRaisesRegex(RedExecutionError, "RED_OUTPUT_PARTIAL_OR_OCCUPIED"):
+                execute_red_with_attempt_custody_v1(root=root, output_root=formal)
+            self.assertTrue((root / "runs/red-attempts/attempt-000001").is_dir())
+            self.assertEqual(b"{}\n", (partial / "manifest.json").read_bytes())
 
 
 if __name__ == "__main__":
