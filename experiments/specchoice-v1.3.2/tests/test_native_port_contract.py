@@ -78,6 +78,38 @@ class NativePortContractTests(unittest.TestCase):
                     {"espresso": staged}, root / "cache", mode="deny", transaction_id="test"
                 )
 
+    def test_cache_transaction_publishes_binary_and_checksum_without_replacement(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            staged = root / "staged"
+            staged.mkdir()
+            candidate = staged / "espresso-0"
+            candidate.write_bytes(b"candidate")
+            candidate.chmod(0o755)
+            cache = root / "cache"
+
+            receipt = native_port_validate.publish_cache_transaction(
+                {"espresso": candidate},
+                cache,
+                transaction_id="release-test",
+            )
+
+            self.assertEqual("published", receipt["status"])
+            self.assertEqual(b"candidate", (cache / "espresso").read_bytes())
+            self.assertEqual(
+                hashlib.sha256(b"candidate").hexdigest() + "  espresso\n",
+                (cache / "espresso.sha256").read_text(encoding="ascii"),
+            )
+            resumed = native_port_validate.publish_cache_transaction(
+                {"espresso": candidate}, cache, transaction_id="release-test-2"
+            )
+            self.assertEqual("exact_resume", resumed["status"])
+            (cache / "espresso.sha256").unlink()
+            with self.assertRaisesRegex(native_port_validate.ValidationError, "CACHE_COLLISION"):
+                native_port_validate.publish_cache_transaction(
+                    {"espresso": candidate}, cache, transaction_id="release-test-3"
+                )
+
     def test_tracer_handoff_is_create_only(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             record = Path(directory) / "record.json"

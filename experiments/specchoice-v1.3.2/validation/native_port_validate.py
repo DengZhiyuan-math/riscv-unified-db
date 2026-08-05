@@ -192,6 +192,61 @@ def publish_cache(staged: dict[str, Path], cache_root: Path, *, mode: str, trans
         os.link(source, target)
 
 
+def _cache_leaf(path: Path) -> tuple[int, int, str]:
+    details = path.lstat()
+    if not stat.S_ISREG(details.st_mode) or path.is_symlink():
+        raise ValidationError("CACHE_LEAF_UNSAFE")
+    return details.st_dev, details.st_ino, _sha256(path)
+
+
+def publish_cache_entries(staged: dict[Path, Path], *, transaction_id: str) -> dict[str, Any]:
+    """Publish complete executable/checksum pairs, or leave no new partial pair."""
+    if not transaction_id or not staged or any(not target.is_absolute() for target in staged):
+        raise ValidationError("CACHE_TRANSACTION_INVALID")
+    expected = {target: _cache_leaf(source)[2] for target, source in staged.items()}
+    leaves = [leaf for target in staged for leaf in (target, target.with_name(f"{target.name}.sha256"))]
+    present = [leaf.exists() or leaf.is_symlink() for leaf in leaves]
+    if any(present):
+        if not all(present):
+            raise ValidationError("CACHE_COLLISION")
+        for binary, digest in expected.items():
+            checksum = binary.with_name(f"{binary.name}.sha256")
+            if _cache_leaf(binary)[2] != digest or checksum.read_text(encoding="ascii") != f"{digest}  {binary.name}\n":
+                raise ValidationError("CACHE_COLLISION")
+        return {"status": "exact_resume", "transaction_id": transaction_id, "sha256": {str(k): v for k, v in expected.items()}}
+    created: list[Path] = []
+    try:
+        for binary, source in staged.items():
+            binary.parent.mkdir(parents=True, exist_ok=True)
+            os.link(source, binary)
+            created.append(binary)
+            checksum = binary.with_name(f"{binary.name}.sha256")
+            descriptor = os.open(checksum, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(descriptor, "w", encoding="ascii") as handle:
+                handle.write(f"{expected[binary]}  {binary.name}\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            created.append(checksum)
+        for binary, digest in expected.items():
+            checksum = binary.with_name(f"{binary.name}.sha256")
+            if _cache_leaf(binary)[2] != digest or checksum.read_text(encoding="ascii") != f"{digest}  {binary.name}\n":
+                raise ValidationError("CACHE_VERIFY_FAILED")
+    except (OSError, ValidationError) as error:
+        for leaf in reversed(created):
+            try:
+                leaf.unlink()
+            except OSError:
+                pass
+        if isinstance(error, ValidationError):
+            raise
+        raise ValidationError("CACHE_PUBLICATION_FAILED") from error
+    return {"status": "published", "transaction_id": transaction_id, "sha256": {str(k): v for k, v in expected.items()}}
+
+
+def publish_cache_transaction(staged: dict[str, Path], cache_root: Path, *, transaction_id: str) -> dict[str, Any]:
+    return publish_cache_entries({(cache_root / name).resolve(): source for name, source in staged.items()}, transaction_id=transaction_id)
+
+
 def _read_sections(path: Path) -> dict[tuple[str, str], tuple[int, int, int, bytes]]:
     raw = path.read_bytes()
     if len(raw) < 32 or raw[:4] != b"\xcf\xfa\xed\xfe":
