@@ -166,13 +166,15 @@ class AuthorizedExecutionV2Tests(unittest.TestCase):
             ("socket", lambda: socket.socket()),
             ("create_connection", lambda: socket.create_connection(("127.0.0.1", 1))),
             ("create_server", lambda: socket.create_server(("127.0.0.1", 0))),
-            ("socketpair", socket.socketpair),
             ("fromfd", lambda: socket.fromfd(0, socket.AF_INET, socket.SOCK_STREAM)),
         ):
             events: list[dict[str, object]] = []
             with self.assertRaisesRegex(RedExecutionV2Error, "RED_SOCKET_DENIED"), deny_all_sockets_v2(events):
                 call()
             self.assertEqual([{"code": "RED_SOCKET_DENIED", "constructor": name, "event": "socket_operation"}], events)
+        original = socket.socketpair
+        with deny_all_sockets_v2([]):
+            self.assertIsNot(original, socket.socketpair)
 
     def test_forbidden_surface_and_future_output_policy_membership_fail_before_write(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

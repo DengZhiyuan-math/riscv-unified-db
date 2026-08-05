@@ -205,7 +205,10 @@ def deny_all_sockets_v2(security_events: list[dict[str, object]]) -> Iterator[No
             raise RedExecutionV2Error("RED_SOCKET_DENIED")
         return fail
     with contextlib.ExitStack() as stack:
-        for name in ("socket", "create_connection", "create_server", "socketpair", "fromfd"):
+        # Patch the helpers before ``socket`` itself: CPython's native socketpair
+        # wraps its descriptors through ``socket.socket`` and could otherwise open
+        # a Unix-domain pair while the guard is being installed.
+        for name in ("create_connection", "create_server", "socketpair", "fromfd", "socket"):
             stack.enter_context(patch.object(socket, name, denied(name)))
         yield
 
