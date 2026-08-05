@@ -309,7 +309,7 @@ Plans:
 - [x] 05-05-PLAN.md — rehearse the exact command, obtain Gate B confirmation, and publish only the successor namespace.
 - `05-06-FAILED-CLOSED.md` / `05-06-CANCELLATION.md` — partial read-only audit and harness history preserved; native construction preflight failed closed before either full regression, no summary exists, and the plan is not completed.
 - `05-07-FAILED-CLOSED.md` / `05-07-CANCELLATION.md` — partial native-guard correction preserved; the first guarded child stopped at Bundler platform admission before the regression suite, zero of two full regressions completed, and no summary exists.
-- [ ] 05-08-PLAN.md — add only the missing `arm64-darwin-23` lockfile platform, adopt the exact 05-07 validation bytes unchanged, and resume two fixed native-confined full regressions.
+- [ ] 05-08-PLAN.md — execute only the forward-authorized `darwin-arm64-source-port-20260805` three-source/two-patch/oracle/all-six-cache contract, then exact-resume formal Red and run two unchanged native-confined full regressions.
 
 **Wave 1**
 
@@ -323,6 +323,13 @@ Plans:
 - `05-06-FAILED-CLOSED.md`: Task 1 produced empty read-only audit commit `d95fb748`; Task 2 added the harness/tests in `46c34c8b`, then stopped at `GUARDED_REGRESS_NETWORK_PROBE_NOT_DENIED` before either full regression. `05-06-CANCELLATION.md` binds this partial history and no `05-06-SUMMARY.md` exists.
 - `05-07-FAILED-CLOSED.md`: native calibration and validation-only work reached the first guarded child, which stopped before the test suite because Bundler 4.0.17 found no `arm64-darwin-23` entry in `Gemfile.lock`. `05-07-CANCELLATION.md` binds the exact partial worktree hashes and blocker; zero of two full regressions completed and no `05-07-SUMMARY.md` exists.
 
+**Forward-Only 05-08 Reconciliation**
+
+- `FWD-05-08-PORT-20260805` supersedes only the earlier prospective lock-platform-only scope for still-active 05-08. It does not edit, reinterpret, complete, or weaken the exact 05-07 cancellation/failed-closed bytes; they remain immutable historical evidence of the earlier authority, blocker, zero completed regressions, and absent summary.
+- The authorized contract is exactly TheProjecter/eqntott `392759e6493a46f1d1ed7d9fb1c7c31197b0f6a8`, jar-ben/mustool `17fa9f9542a9ce05328dfccd1cd410f05f741ab3`, psksvp/espresso-ab-1.0 `18f59c723545f11bcb46d9e38e936531c990e5cf`, the named eqntott and mustool repository patch paths, espresso with no patch, committed fixture/oracle bytes, disposable source/build/staging roots, and the exact all-six no-overwrite external UDB cache targets. Any drift requires another explicit forward decision.
+- Current `Gemfile.lock`, the cancellation-bound guarded harness/tests, and the already authorized Darwin arm64 Z3 and locked `node_modules` restores are read-only predecessor inputs, not 05-08 outputs. The source-port/cache record remains non-authoritative and cannot alter Gates A/B, formal Red bytes, D-01 through D-16, provider/model/retrieval/publication authority, or requirement state.
+- Tasks 01/02 must leave one monotonic `contract-validation.json` handoff (`tracer_validated` then `all_tools_validated_cache_unpublished` with predecessor SHA-256 binding). Task 03 cannot reconstruct or rerun those source/patch/build/oracle decisions; only the exact handoff can admit cache, formal, and final-regression gates.
+
 **Wave 2** *(blocked on completed 05-01 and forward-only historical reconciliation)*
 
 - [x] 05-04: Create the distinct successor policy/modules/tests, prove the exact production command in copied roots, and obtain Gate A contract approval.
@@ -333,7 +340,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 05-08: Add exactly `arm64-darwin-23` to the existing lockfile without dependency drift, preserve the corrected native guard bytes, repeat formal zero-write exact-resume, and complete two guarded `./bin/regress --all` release gates without changing evidence or authority.
+- [ ] 05-08: Freeze the exact three source commits and two visible patch bytes, validate all three Darwin arm64 executables twice against committed independent oracles, publish or exact-resume only the all-six external cache set without overwrite, consume the exact Task 02 handoff, repeat formal zero-write exact-resume, and complete two guarded `./bin/regress --all` release gates without changing evidence or authority.
 
 ### Phase 6: Partition-Aware Ablation and Metamorphic Evaluation
 
