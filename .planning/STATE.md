@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 05
 current_phase_name: authorized-execution-and-immutable-evidence
 status: executing
-stopped_at: Phase 05 successor plans created; ready for 05-04 Gate A contract work
-last_updated: "2026-08-05T08:52:58Z"
+stopped_at: Completed 05-04-PLAN.md; Gate A approved exact v2 contract, Plan 05-05 may rehearse only
+last_updated: "2026-08-05T10:02:13.828Z"
 last_activity: 2026-08-05
 last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 42
-  completed_plans: 34
+  completed_plans: 35
   percent: 43
 ---
 
@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-07-30)
 ## Current Position
 
 Phase: 05 (authorized-execution-and-immutable-evidence) — EXECUTING
-Plan: 2 of 5 active discoverable plans complete (05-00 and 05-01); 05-02 is rejected-not-completed and 05-03 is superseded/unexecuted
+Plan: 3 of 5 active discoverable plans complete (05-00 and 05-01); 05-02 is rejected-not-completed and 05-03 is superseded/unexecuted
 Status: Ready to execute
 Last activity: 2026-08-05 — Phase 05 execution started
 
-Progress: [████░░░░░░] 40% of executable Phase 5 plans complete
+Progress: [████████░░] 83% of executable Phase 5 plans complete
 
 ## Performance Metrics
 
@@ -90,6 +90,7 @@ Progress: [████░░░░░░] 40% of executable Phase 5 plans compl
 | Phase 04 P01 | 1h 15m | 2 tasks | 8 files |
 | Phase 05 P00 | 5min | 2 tasks | 1 files |
 | Phase 05 P01 | 3min | 3 tasks | 5 files |
+| Phase 05 P04 | multi-session | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -167,6 +168,7 @@ Recent decisions affecting current work:
 - [Phase ?]: User explicitly approved only the exact Phase 5 Red contract bound to policy c48b5c607aa3a6be532ca0accb7f9bfd685b1eab60f82dc2b4b4c4ce97285d15 and v6 authority 363cf85c4088f5f268692f8319b70b50f7ed717f7145ed84a6923499ae992518; byte drift requires a successor and new human gate.
 - [Phase ?]: [Phase 05 Plan 02] User selected reject-final-closure: Task 05-02-03 is prohibited because the frozen policy and CLI expose only execute-red-temporary while the planned formal publication requires execute-red. All formal, attempt, and successor targets remain absent; a versioned successor and new contract/final-closure gates are required.
 - [Phase 05]: Rejected 05-02 and unexecuted 05-03 are preserved as non-discoverable historical documents with no fabricated summaries; 05-04 through 05-06 are the only active successors, with separate Gate A and Gate B approvals before successor-only publication.
+- [Phase ?]: [Phase 05 Plan 04 Gate A] User selected approve-v2-contract only for persisted raw policy config/execution/red-execution-policy-v2.json (2406 bytes, 1785acf527c4d5c08790a525937f4960896ac775d5c9a6635903b384c2c8835f), runtime_closure_sha256=29558e76c09dac2b82468915567667419e5a281091201611449a6960f0b7a811, and external gate_a_projection_sha256=18e4a9a7ec40e881ff6d3994db4554a3907298a01511c566769177b51d40bdec; Phase 4 v6 raw input=363cf85c4088f5f268692f8319b70b50f7ed717f7145ed84a6923499ae992518 and authority claim=f77cdbd908222209730058be07e5ffa363c905f72183b1f6970c4d9c36e315fb. The exact execute-red ten-option schema, fixed v2 targets, Red zero matrix, conditional TS-11/TS-12 states, and target absence are approved for 05-05 pre-publication work only; no evidence publication, model/provider/credential/retrieval/network/subprocess/metric/final-conclusion/requirement-closure authority is granted.
 
 ### Pending Todos
 
@@ -185,6 +187,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-05T08:52:58Z
-Stopped at: Phase 05 successor plans created; ready for 05-04 Gate A contract work
-Resume file: .planning/phases/05-authorized-execution-and-immutable-evidence/05-04-PLAN.md
+Last session: 2026-08-05T10:02:13.813Z
+Stopped at: Completed 05-04-PLAN.md; Gate A approved exact v2 contract, Plan 05-05 may rehearse only
+Resume file: .planning/phases/05-authorized-execution-and-immutable-evidence/05-05-PLAN.md

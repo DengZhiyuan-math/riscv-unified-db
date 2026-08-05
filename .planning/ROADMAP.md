@@ -297,7 +297,7 @@ Plans:
   3. On Green/Yellow, the reviewer can inspect each call's prompt hash, model snapshot, sampling and output settings, actual token use, raw response, parse result, refusal/truncation state, and retry/failure state.
   4. On Red, the reviewer can verify an empty real-model call ledger and preserved runner, construction, ambiguity, and trigger evidence; the G/Y requirements remain conditional until Phase 7 validates Red closure.
 
-**Plans:** 2/5 executable plans complete; 2 historical plans retired without completion; 3 successor plans pending
+**Plans:** 3/5 plans executed
 
 Plans:
 
@@ -305,7 +305,7 @@ Plans:
 - [x] 05-01-PLAN.md
 - `05-02-REJECTED.md` — partial implementation followed by explicit final-closure rejection; not completed and no summary exists.
 - `05-03-SUPERSEDED.md` — unexecuted predecessor audit; not completed and no summary exists.
-- [ ] 05-04-PLAN.md — implement and freeze the separate successor contract, then obtain Gate A approval.
+- [x] 05-04-PLAN.md — implement and freeze the separate successor contract, then obtain Gate A approval.
 - [ ] 05-05-PLAN.md — rehearse the exact command, obtain Gate B confirmation, and publish only the successor namespace.
 - [ ] 05-06-PLAN.md — audit successor evidence and exact resume read-only.
 
@@ -419,6 +419,6 @@ Plans:
 | 2. Deterministic Measurement Spine | 22/22 | Complete | 2026-08-03 |
 | 3. Human-Reviewed Data Preregistration | 4/4 | Complete   | 2026-08-04 |
 | 4. Offline Treatments, Retrieval, and Branch Freeze | 4/4 | Complete    | 2026-08-04 |
-| 5. Authorized Execution and Immutable Evidence | 2/5 executable (2 historical plans retired) | In Progress|  |
+| 5. Authorized Execution and Immutable Evidence | 3/5 | In Progress|  |
 | 6. Partition-Aware Ablation and Metamorphic Evaluation | 0/4 | Not started | - |
 | 7. Reproducible Feasibility Conclusion | 0/3 | Not started | - |
