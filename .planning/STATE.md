@@ -5,8 +5,8 @@ milestone_name: milestone
 current_phase: 05
 current_phase_name: authorized-execution-and-immutable-evidence
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-08-05T08:08:27.423Z"
+stopped_at: 05-02 final closure rejected; replan required before formal Red publication
+last_updated: "2026-08-05T08:25:38.379Z"
 last_activity: 2026-08-05
 last_activity_desc: Phase 05 execution started
 progress:
@@ -165,6 +165,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Wave 0 records only the restored local toolchain and explicitly grants no experiment or formal-evidence authority.
 - [Phase ?]: The handoff is valid only while the pinned tools, pyproject digest, and empty formal target namespaces agree.
 - [Phase ?]: User explicitly approved only the exact Phase 5 Red contract bound to policy c48b5c607aa3a6be532ca0accb7f9bfd685b1eab60f82dc2b4b4c4ce97285d15 and v6 authority 363cf85c4088f5f268692f8319b70b50f7ed717f7145ed84a6923499ae992518; byte drift requires a successor and new human gate.
+- [Phase ?]: [Phase 05 Plan 02] User selected reject-final-closure: Task 05-02-03 is prohibited because the frozen policy and CLI expose only execute-red-temporary while the planned formal publication requires execute-red. All formal, attempt, and successor targets remain absent; a versioned successor and new contract/final-closure gates are required.
 
 ### Pending Todos
 
@@ -183,6 +184,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-05T08:08:27.409Z
-Stopped at: Completed 05-01-PLAN.md
-Resume file: None
+Last session: 2026-08-05T08:25:38.365Z
+Stopped at: 05-02 final closure rejected; replan required before formal Red publication
+Resume file: .planning/phases/05-authorized-execution-and-immutable-evidence/05-02-PLAN.md
