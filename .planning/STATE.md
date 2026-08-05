@@ -4,17 +4,17 @@ milestone: v1.3.2
 milestone_name: milestone
 current_phase: 05
 current_phase_name: authorized-execution-and-immutable-evidence
-status: executing
-stopped_at: FWD-05-08-MUSTOOL-INCLUDE-NEXT-INTTYPES-20260805 preserves completed Task 01 commit d61c2b60, attempt-02 SHA256 84feca91...f32, every prior failure and authority record, the three-line spacing decision, and both unexecuted direct-header predecessors while authorizing Task 02 alone to replace only the mustool header hunk with exact include_next inttypes.h in the same one-path/two-hunk successor delta
-last_updated: "2026-08-05T19:14:58Z"
+status: complete
+stopped_at: Phase 05 completed through the v3 05-08 successor terminal record 3bf0c8fcee446111ea1dd93a3cc6cf6f6dedb630f55bb93c8852cfd3707d3f15
+last_updated: "2026-08-05T21:20:22Z"
 last_activity: 2026-08-05
-last_activity_desc: Preserved every prior 05-08 record, completed Task 01/attempt-02, the three-line spacing decision, and both direct-header predecessors, then authorized only exact include_next inttypes.h for the mustool header hunk under the same one-path/two-hunk and complete patch/tree-diff binding with no include-path, flag, environment, language-mode, or other source change
+last_activity_desc: Completed v3 all-tools validation, no-replace cache publication, formal zero-write replay, two guarded regressions, and the create-only terminal attempt-04 without changing formal authority
 progress:
   total_phases: 7
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 42
-  completed_plans: 36
-  percent: 43
+  completed_plans: 37
+  percent: 57
 ---
 
 # Project State
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-30)
 
 **Core value:** Produce a reproducible, leakage-safe, falsifiable A/B/C result—positive, negative, or Red-path infeasible—without weakening gold semantics, deterministic measurement, or human control of RISC-V judgments.
-**Current focus:** Phase 05 — authorized-execution-and-immutable-evidence
+**Current focus:** Phase 05 complete; Phase 06 is the next unstarted phase.
 
 ## Current Position
 
-Phase: 05 (authorized-execution-and-immutable-evidence) — EXECUTING
-Plan: 4 of 5 active discoverable plans complete (05-00, 05-01, 05-04, and 05-05); 05-02 is rejected, 05-03 is superseded, and partial 05-06/05-07 are failed-closed historical records without summaries
-Status: Task 01 completed at `d61c2b60`; create-only attempt-02 is preserved at SHA-256 `84feca91ffb479e9870fb49ca951c3377f3ad9ddde3e9bca1dc0e154a48bbf32`. Ready for Task 02 to create the two named patches, with the existing mustool patch allowed exactly three `custom_minisat/Options.h` PRIi64 spacing lines plus one exact `#include_next <inttypes.h>` immediately after pristine `#include <string.h>` to skip the local case-insensitive `IntTypes.h` shadow; those successor additions are exactly one path/two hunks with no include-search path, build flag, environment, language-mode, or further source edit. Both direct-header predecessors remain preserved but forbidden in the applied delta. Attempt-03/04 remain absent and no all-tools port or regression result is claimed
-Last activity: 2026-08-05 — Approved `FWD-05-08-MUSTOOL-INCLUDE-NEXT-INTTYPES-20260805` to supersede only the unexecuted mustool header hunk while retaining all prior authority, attempts, failures, diagnostics, completed Task 01 bytes, and the three-line spacing decision
+Phase: 05 (authorized-execution-and-immutable-evidence) — COMPLETE
+Plan: 5 of 5 active discoverable plans complete (05-00, 05-01, 05-04, 05-05, and 05-08); 05-02 is rejected, 05-03 is superseded, and partial 05-06/05-07 remain failed-closed historical records without summaries
+Status: The v3 05-08 successor preserved all historical custody, validated the three-tool source port, published exactly six no-replace local cache leaves, proved formal Red exact-resume zero writes, completed two guarded full regressions, and created attempt-04 SHA-256 `3bf0c8fcee446111ea1dd93a3cc6cf6f6dedb630f55bb93c8852cfd3707d3f15` in `validation_complete`. It grants no model, Green/Yellow, publication, or final-conclusion authority.
+Last activity: 2026-08-05 — Completed Phase 05 terminal validation successor at local commit `1d83a6cc`.
 
-Progress: [████████░░] 80% of active discoverable Phase 5 plans complete
+Progress: [██████████] 100% of active discoverable Phase 5 plans complete
 
 ## Performance Metrics
 

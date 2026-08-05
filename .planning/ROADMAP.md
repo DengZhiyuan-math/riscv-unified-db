@@ -18,7 +18,7 @@ SpecChoice v1.3.2 proceeds through seven strict, dependency-ordered increments: 
 - [x] **Phase 2: Deterministic Measurement Spine** - Prove the frozen adjudication and diagnostic contract on all 11 fixtures before innovation. (completed 2026-08-03)
 - [x] **Phase 3: Human-Reviewed Data Preregistration** - Produce leakage-safe, provenance-rich data whose semantic decisions are explicitly human-approved. (completed 2026-08-04)
 - [x] **Phase 4: Offline Treatments, Retrieval, and Branch Freeze** - Make the controlled treatments inspectable offline, freeze them, and select exactly one fail-closed branch. (completed 2026-08-04)
-- [ ] **Phase 5: Authorized Execution and Immutable Evidence** - Execute the approved Green/Yellow call matrix or preserve a verifiable Red no-call record.
+- [x] **Phase 5: Authorized Execution and Immutable Evidence** - Execute the approved Green/Yellow call matrix or preserve a verifiable Red no-call record.
 - [ ] **Phase 6: Partition-Aware Ablation and Metamorphic Evaluation** - Score the authorized branch without pooling partitions or collapsing distinct failure modes.
 - [ ] **Phase 7: Reproducible Feasibility Conclusion** - Deliver a byte-stable, claim-bounded positive, negative, or Red conclusion for human acceptance.
 
@@ -297,7 +297,7 @@ Plans:
   3. On Green/Yellow, the reviewer can inspect each call's prompt hash, model snapshot, sampling and output settings, actual token use, raw response, parse result, refusal/truncation state, and retry/failure state.
   4. On Red, the reviewer can verify an empty real-model call ledger and preserved runner, construction, ambiguity, and trigger evidence; the G/Y requirements remain conditional until Phase 7 validates Red closure.
 
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans executed
 
 Plans:
 
@@ -309,7 +309,7 @@ Plans:
 - [x] 05-05-PLAN.md — rehearse the exact command, obtain Gate B confirmation, and publish only the successor namespace.
 - `05-06-FAILED-CLOSED.md` / `05-06-CANCELLATION.md` — partial read-only audit and harness history preserved; native construction preflight failed closed before either full regression, no summary exists, and the plan is not completed.
 - `05-07-FAILED-CLOSED.md` / `05-07-CANCELLATION.md` — partial native-guard correction preserved; the first guarded child stopped at Bundler platform admission before the regression suite, zero of two full regressions completed, and no summary exists.
-- [ ] 05-08-PLAN.md — exact-resume completed Task 01 commit `d61c2b60` and create-only attempt-02 SHA-256 `84feca91...f32`; Task 02 alone may add exactly three `custom_minisat/Options.h` PRIi64 literal/macro spacing lines plus one exact `#include_next <inttypes.h>` after pristine `#include <string.h>` to the existing named mustool patch, bind the successor additions as exactly one path/two hunks within the complete patch/source-diff/tree closure without changing include-search paths, build flags, language mode, environment, or any further byte, then create only attempt-03 before Task 03 can admit cache/formal/two guarded regressions and terminal attempt-04.
+- [x] 05-08-PLAN.md — the v3 forward successor validated all three Darwin arm64 tools, created attempt-03 and terminal attempt-04, published the six no-replace cache leaves, preserved the Red formal root through a zero-write exact resume, and passed two fixed guarded full regressions. See `05-08-SUMMARY.md`.
 
 **Wave 1**
 
@@ -329,7 +329,7 @@ Plans:
 - The authorized contract is exactly TheProjecter/eqntott `392759e6493a46f1d1ed7d9fb1c7c31197b0f6a8`, jar-ben/mustool `17fa9f9542a9ce05328dfccd1cd410f05f741ab3`, psksvp/espresso-ab-1.0 `18f59c723545f11bcb46d9e38e936531c990e5cf`, the named eqntott and mustool repository patch paths, espresso with no patch, committed fixture/oracle bytes, disposable source/build/staging roots, and the exact all-six no-overwrite external UDB cache targets. Any drift requires another explicit forward decision.
 - Current `Gemfile.lock`, the cancellation-bound guarded harness/tests, and the already authorized Darwin arm64 Z3 and locked `node_modules` restores are read-only predecessor inputs, not 05-08 outputs. The source-port/cache record remains non-authoritative and cannot alter Gates A/B, formal Red bytes, D-01 through D-16, provider/model/retrieval/publication authority, or requirement state.
 - The root `runs/native-port-darwin-arm64-projection-v2-20260805/contract-validation.json` is immutable at SHA-256 `7f6d0761ccdb775ddb62e13ca641dd389819e587acaf29ca4f805f0ab502a1fd`, state `failed_closed`, diagnostic `ORACLE_EXECUTION_NOT_IMPLEMENTED`. Per `FWD-05-08-CREATE-ONLY-RECORD-SUCCESSOR-20260805`, Task 01 creates only attempt-02 in `tracer_validated`, Task 02 creates only attempt-03 in `all_tools_validated_cache_unpublished`, and Task 03 creates only terminal attempt-04; each binds the exact predecessor path/SHA-256/state and applicable root diagnostic. No overwrite, delete, move, rewrite, truncation, relabel, reconstruction, or alternate successor path is authorized.
-- Task 01 completed at commit `d61c2b6017f1d9d30c257d26e088427aa5dc0f9a` and its create-only attempt-02 is preserved at SHA-256 `84feca91ffb479e9870fb49ca951c3377f3ad9ddde3e9bca1dc0e154a48bbf32`, state `tracer_validated`; attempt-03 and attempt-04 remain absent. Task 01 is an immutable predecessor and cannot be rerun, amended, or reconstructed.
+- Task 01 completed at commit `d61c2b6017f1d9d30c257d26e088427aa5dc0f9a` and its create-only attempt-02 is preserved at SHA-256 `84feca91ffb479e9870fb49ca951c3377f3ad9ddde3e9bca1dc0e154a48bbf32`, state `tracer_validated`. The v3 successor preserved that chain, created attempt-03 in `all_tools_validated_cache_unpublished`, and created terminal attempt-04 in `validation_complete`; none of the predecessors was changed.
 
 **Versioned 05-08 Reproducibility Successor**
 
@@ -353,7 +353,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 05-08: Preserve the original full-hash mismatch/root record and exact-resume completed Task 01 `d61c2b60` plus attempt-02 `84feca91...f32`; Task 02 binds both named patches, including exactly the three authorized mustool PRIi64 spacing lines plus one exact `#include_next <inttypes.h>` after pristine `#include <string.h>` to skip the local case-insensitive shadow, binds those additions as one path/two hunks within the complete patch/source-diff/tree identities with unchanged include-search paths, build flags, language mode, environment, and all other source bytes, validates all three same-size regular Mach-O arm64 pairs by exact raw `__TEXT,__text`/`__TEXT,__stubs` bytes and every oracle twice, and creates only attempt-03; then and only then Task 03 may publish/exact-resume the all-six cache, repeat formal zero-write exact-resume, complete two guarded `./bin/regress --all` gates, and create terminal attempt-04 without changing evidence or authority.
+- [x] 05-08: The v3 successor preserved the original failed mismatch custody and the complete predecessor chain; it validated all three same-size regular Mach-O arm64 pairs against exact raw `__TEXT,__text`/`__TEXT,__stubs` projections and repeated oracles, created attempt-03, published the all-six no-replace cache set, retained a formal zero-write exact resume, completed two guarded `./bin/regress --all` gates, and created terminal attempt-04 without changing evidence or authority.
 
 ### Phase 6: Partition-Aware Ablation and Metamorphic Evaluation
 
