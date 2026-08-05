@@ -10,7 +10,7 @@ updated: 2026-08-05
 
 # Phase 05 — Forward-Only Successor Validation Strategy
 
-> Current validation and sampling contract for active Plans 05-04 through 05-06. Historical Plan 05-00/05-01 completion remains evidence; rejected 05-02 and superseded 05-03 are not active validation steps or requirement-completion claims.
+> Current validation and sampling contract for the sole active Plan 05-07. Completed Plans 05-00/05-01/05-04/05-05 remain evidence; rejected 05-02, superseded 05-03, and partial failed-closed 05-06 are not active validation steps or requirement-completion claims.
 
 ## Truthful Lifecycle Baseline
 
@@ -20,18 +20,19 @@ updated: 2026-08-05
 | `05-01-PLAN.md` / `05-01-SUMMARY.md` | Completed | The predecessor temporary-root Red tracer, structural scan, all-socket tests, and first human contract decision completed. Those results remain historical and do not authorize successor bytes. |
 | `05-02-REJECTED.md` / `05-02-CANCELLATION.md` | Rejected, not completed | Partial implementation commits are preserved, the final-closure choice was rejection, Task 05-02-03 never ran, and no `05-02-SUMMARY.md` exists. It is not an active Nyquist mapping. |
 | `05-03-SUPERSEDED.md` | Superseded, never executed | Its predecessor formal root was never published and no `05-03-SUMMARY.md` exists. It is not an active audit contract. |
-| `05-04-PLAN.md` | Planned, not executed | Creates the successor policy/modules/test closure and non-circular Gate-A projection, then stops at Gate A. |
-| `05-05-PLAN.md` | Planned, not executed | Recomputes the approved projection, rehearses in a disposable copy, stops at Gate B, and only after confirmation may publish plus run the first actual zero-write replay. |
-| `05-06-PLAN.md` | Planned, not executed | Independently recomputes the formal graph and approved projection read-only, adds a validation-only native-guard regression harness outside the formal closure, then runs the formal zero-write audit and two guarded full regressions. |
+| `05-04-PLAN.md` / `05-04-SUMMARY.md` | Completed | Created the successor policy/modules/test closure and non-circular Gate-A projection, then recorded the exact Gate A approval without publication. |
+| `05-05-PLAN.md` / `05-05-SUMMARY.md` | Completed | Recomputed the approved projection, obtained Gate B, published the fixed current Red evidence set, and proved exact-resume zero writes. |
+| `05-06-FAILED-CLOSED.md` / `05-06-CANCELLATION.md` | Partial, failed closed, not completed | Preserves empty audit commit `d95fb748` and harness commit `46c34c8b`; native construction preflight emitted `GUARDED_REGRESS_NETWORK_PROBE_NOT_DENIED` before either full regression. No `05-06-SUMMARY.md` exists. |
+| `05-07-PLAN.md` | Planned, not executed | First performs a bounded read-only three-trial calibration of the exact native fixed-loopback denial tuple; only that stable result admits the harness/test correction, formal zero-write audit, and two guarded full regressions. |
 
-The active discoverable Phase 5 plan set is exactly `05-00`, `05-01`, `05-04`, `05-05`, and `05-06`; exactly `05-00` and `05-01` are complete, so active completion is **2/5**. Rejected 05-02 and superseded/unexecuted 05-03 are neither active nor completed.
+The active discoverable Phase 5 plan set is exactly `05-00`, `05-01`, `05-04`, `05-05`, and `05-07`; the first four are complete, so active completion is **4/5**. Rejected 05-02, superseded 05-03, and failed-closed 05-06 are historical and non-discoverable.
 
 Current filesystem facts at this planning revision:
 
 - `experiments/specchoice-v1.3.2/tests/test_authorized_execution.py` exists as completed predecessor coverage.
-- `experiments/specchoice-v1.3.2/tests/test_authorized_execution_v2.py` does not yet exist; Task 05-04-01 creates it test-first.
-- `experiments/specchoice-v1.3.2/validation/guarded_regress.py` and `experiments/specchoice-v1.3.2/tests/test_guarded_regress.py` do not yet exist; Task 05-06-02 creates them test-first after formal publication without changing any formal closure input.
-- `runs/red-execution-v2`, `runs/red-attempts-v2`, `runs/red-successors-v2`, `receipts/red-execution-v2.json`, and `reports/red-execution/red-execution-v2.md` are absent. No successor execution or publication is claimed.
+- `experiments/specchoice-v1.3.2/tests/test_authorized_execution_v2.py` exists and 05-04/05-05 summaries record its passing contract coverage.
+- `experiments/specchoice-v1.3.2/validation/guarded_regress.py` and `experiments/specchoice-v1.3.2/tests/test_guarded_regress.py` exist from partial 05-06 commit `46c34c8b`; their current construction-only network assertion is the failed-closed defect owned by 05-07.
+- `runs/red-execution-v2`, `receipts/red-execution-v2.json`, and `reports/red-execution/red-execution-v2.md` exist as the completed 05-05 formal set; `runs/red-attempts-v2` and `runs/red-successors-v2` remain absent.
 
 ## Test Infrastructure and Sampling Commands
 
@@ -40,13 +41,13 @@ Current filesystem facts at this planning revision:
 | Framework | Python standard-library `unittest`; project contract Python `>=3.12` |
 | Pinned tools | `.venv/bin/python` 3.12.13 and `.venv/bin/ruff` 0.16.0, already recorded by 05-00 |
 | Completed predecessor sampling | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_authorized_execution tests.test_treatments_h3 tests.test_canonical tests.test_filesystem_boundary -q` |
-| Active successor quick sampling | After Task 05-04-01 creates the module: `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_authorized_execution_v2 -q && ../../.venv/bin/ruff check --isolated src/specchoice_execution/red_v2.py src/specchoice_execution/cli_v2.py tests/test_authorized_execution_v2.py` |
-| Active full pre-gate sampling | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_authorized_execution_v2 tests.test_authorized_execution tests.test_treatments_h3 tests.test_canonical tests.test_filesystem_boundary -q && ../../.venv/bin/ruff check --isolated src/specchoice_execution tests/test_authorized_execution.py tests/test_authorized_execution_v2.py && git diff --check` |
-| Guarded harness contract sampling | After Task 05-06-02 creates both files: `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_guarded_regress -q && ../../.venv/bin/ruff check --isolated validation/guarded_regress.py tests/test_guarded_regress.py`. Tests inject guard runners and temporary fake local commands; they open no real network connection and never invoke the real full regression. |
-| Final Phase 5 sampling | After actual formal v2 publication, run the complete focused modules and identical production command/write observer named by 05-06-02, then from the repository root invoke `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python experiments/specchoice-v1.3.2/validation/guarded_regress.py --repo-root .` twice. Each harness invocation must preflight `/usr/bin/sandbox-exec`, execute exactly `./bin/regress --all` inside its explicit deny-network/protected-install profile, and prove the exact ten formal leaves plus receipt/report inventory and SHA-256 unchanged. Both full regressions are planned, not yet run; unavailable/nonfunctional guard, prohibited operation, mutation, or failure blocks closure, and bare regression is forbidden. |
-| Feedback latency | Measure successor quick/full runtime when the v2 test module exists; no unmeasured runtime is treated as passing the 30-second sampling target. |
+| Native-denial calibration | Before any implementation or formal/evidence access, Task 05-07-01 runs exactly three two-second-bounded `/usr/bin/sandbox-exec` trials under `(deny file-write*)` and `(deny network*)` of one `socket.AF_INET`/`socket.SOCK_STREAM` connect to numeric `127.0.0.1:0`, with no listener or DNS. It accepts only three identical tuples: return code `77`, stdout exactly `GUARDED_REGRESS_NETWORK_CONNECT_DENIED errno=1 diagnostic=Operation not permitted\n`, and empty stderr, emitted only for `errno.EPERM`. Any write attempt, success, other errno/diagnostic, timeout, signal, extra output, or instability escalates immediately with no formal/evidence/planning-result write and no regression admission. |
+| Active successor quick sampling | After calibration succeeds, Task 05-07-02 runs the three exact `test_network_preflight_*` selectors plus every retained guard/evidence contract and Ruff command named in `05-07-PLAN.md`. |
+| Guarded harness contract sampling | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_guarded_regress -q && ../../.venv/bin/ruff check --isolated validation/guarded_regress.py tests/test_guarded_regress.py`. Tests inject runner results only; they open no real socket, start no listener, contact no remote address, and never invoke the real full regression. |
+| Final Phase 5 sampling | Task 05-07-03 first rechecks the exact calibrated tuple, then repeats the exact current formal command and full focused modules, and finally invokes `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python experiments/specchoice-v1.3.2/validation/guarded_regress.py --repo-root .` twice from the repository root. Each harness invocation must require socket construction followed by `connect(("127.0.0.1", 0))`, admit only the calibrated `errno.EPERM` plus exact diagnostic/return-code/stdout/stderr contract, execute exactly `./bin/regress --all` inside the unchanged deny-network/protected-install profile, and preserve the exact ten formal leaves plus receipt/report inventory/SHA-256. |
+| Feedback latency | Focused unit and lint commands provide the fast loop; the two repository-wide regressions are terminal release gates and no partial output is treated as completion. |
 
-No validation command may install packages, use the network, substitute ambient tools, create a provider/model/credential/retrieval surface, or infer formal authority from a test result. The sole new process boundary is the validation-only harness's fixed `sandbox-exec ... ./bin/regress --all` argv; it is outside the formal v2 closure, accepts no caller-selected command, and is never imported or reached by `execute-red`.
+No validation command may install packages, contact a remote network, substitute ambient tools, create a provider/model/credential/retrieval surface, or infer formal authority from a test result. The only intentional network operations are the bounded read-only calibration and the production preflight's sandboxed fixed numeric-loopback/port-zero connect-denial probes; neither creates a listener, performs DNS, admits a successful connection, or addresses a routable host. The harness's fixed `sandbox-exec ... ./bin/regress --all` boundary remains outside the formal v2 closure, accepts no caller-selected command, and is never imported or reached by `execute-red`.
 
 ## Non-Circular Gate-A Projection Contract
 
@@ -68,50 +69,46 @@ Actual target absence is displayed at Gate A and Gate B as separately recomputed
 
 | Task | Wave | Requirement / threat | Automated or gate evidence | Artifact state | Execution state |
 |---|---:|---|---|---|---|
-| 05-04-01 | 2 | TS-07/11/12; D-01..13; non-circular projection | Exact copied-root command, parser mismatch tests, positive projection recomputation, negative self-reference/recursion rejection, v1 preservation, Ruff | v2 test absent until task starts | Planned; no result claimed |
-| 05-04-02 | 2 | D-02/03/05..08/13..16 | Full `tests.test_authorized_execution_v2`, all-socket/forbidden-surface/fault/no-replace/attempt/drift cases, Ruff, actual-target absence | v2 test absent until 05-04-01 | Planned; no result claimed |
-| 05-04-03 Gate A | 2 | D-01/05/09/13/15 | Full successor suite plus canonical external projection display; human chooses `approve-v2-contract` or `reject-v2-contract` | No machine approval artifact permitted | Planned blocking human gate |
-| 05-05-01 | 3 | D-02/05/08/13 | Byte-for-byte Gate-A projection recomputation, exact copied-root production rehearsal, copied-root zero-write replay, full focused suite and Ruff | Actual targets must remain absent | Planned; no result claimed |
-| 05-05-02 Gate B | 3 | D-01/05/09/13/15 | Gate-A versus final projection zero byte/field delta, three distinct hash fields, target absence, full suite; human confirms or rejects | No decision file permitted | Planned blocking human gate |
-| 05-05-03 | 3 | TS-07/11/12; D-01..16 | Exact production command, terminal receipt projection binding, focused formal validators, then identical second invocation with a complete zero-write snapshot | Formal targets currently absent | Planned; no publication claimed |
-| 05-06-01 | 4 | TS-07/11/12; T-05-06-01..06 | Read-only graph audit from descriptor-held bytes, independent projection recomputation, self-reference rejection, attempt/TS-07/matrix/no-call tests | Depends on complete 05-05 publication | Planned; no audit result claimed |
-| 05-06-02 | 4 | D-02 formal zero-write audit, T-05-06-07/08 guarded release process, and bounded authority | TDD unavailable/bad guard, prohibited-operation, evidence-mutation, and fake-local-success contracts; identical production invocation under its own write observer; focused suite/Ruff/diff; then two `guarded_regress.py --repo-root .` invocations, each with exact twelve-file inventory/SHA-256 before/after and fixed native-confined `./bin/regress --all` | Depends on actual formal v2 publication and 05-06-01 pass | Planned; harness/tests absent and no audit or full-regression result claimed |
+| 05-04 | 2 | TS-07/11/12; D-01..16; Gate A | Successor contract, non-circular projection, copied-root proof, adversarial closure, and exact Gate A approval are recorded in `05-04-SUMMARY.md`. | Current formal closure inputs exist and remain fixed. | Completed |
+| 05-05 | 3 | TS-07/11/12; D-01..16; Gate B | Exact projection recomputation, Gate B, fixed-set publication, and zero-write exact resume are recorded in `05-05-SUMMARY.md`. | Current formal root, receipt, and report exist. | Completed |
+| 05-06 historical | 4 | T-05-06 native preflight | Empty audit commit and harness commit are preserved; native construction probe emitted `GUARDED_REGRESS_NETWORK_PROBE_NOT_DENIED`. | Harness/tests exist; no formal byte changed and no full regression ran. | Failed closed; cancelled without summary |
+| 05-07-01 | 4 | TS-12; T-05-07-01/02 | Three bounded read-only trials of the exact native fixed-loopback/port-zero command; terminal observation must be three identical EPERM/return-code/stdout/stderr tuples before any implementation or regression. | No file artifact; zero writes and immediate escalation on mismatch. | Planned |
+| 05-07-02 | 4 | TS-12; D-05/06/15; T-05-07-01..03 | TDD exact calibrated-target/construct/connect/EPERM-diagnostic admission plus success/ordinary-failure/ambiguity rejection; retained harness tests and Ruff. | Changes only harness/tests after 05-07-01 passes. | Planned |
+| 05-07-03 | 4 | TS-07/11/12; D-01..16; T-05-07-03..06 | Recheck calibrated native tuple, identical formal zero-write replay, full focused suite/Ruff/diff, then two guarded full regressions with exact evidence inventory/hash equality. | Read-only over formal and authority artifacts; summary only after every pass. | Planned |
 
 ## Human Gates
 
 | Gate | Preconditions | Human decision | Fail-closed outcome |
 |---|---|---|---|
-| Gate A — successor contract | v2 source/policy/test closure exists; positive/negative projection tests and full copied-root suite pass; actual targets are absent | Approve or reject the exact canonical external projection and displayed contract | Rejection, silence, test failure, recursion, or missing field leaves every actual target absent and blocks 05-05 |
-| Gate B — final publication closure | Gate-A projection recomputes byte-for-byte; copied-root production and zero-write rehearsal pass; current projection has zero delta; actual targets are absent | Confirm or reject one exact actual publication | Rejection, silence, any delta, target occupancy, or validation failure prohibits the actual writer |
+| Gate A — successor contract | Completed in 05-04 | Approved only the exact canonical external projection and displayed contract | Preserved; 05-07 cannot change or reinterpret it. |
+| Gate B — final publication closure | Completed in 05-05 | Confirmed the unchanged Gate-A projection for exactly one current publication and exact resume | Preserved; 05-07 cannot change or reinterpret it. |
 
-The two gates are separate and neither predecessor approval nor Phase 4 v6 input authority substitutes for either successor decision.
+The two gates remain separate completed historical authorities. Plan 05-07 adds no human decision because its validation-only harness is outside the formal closure; a formal-byte change would still require a separately versioned successor and new authority.
 
 ## Formal Zero-Write Audit
 
-The 05-05 post-publication replay and 05-06 final audit must each:
+The completed 05-05 post-publication replay and the planned 05-07 final audit must each:
 
 1. Snapshot exact repository-relative inventory, bytes, SHA-256, and write-observable metadata for formal, optional attempt, receipt, and Markdown targets.
 2. Invoke the identical ten-option `execute-red` command under the all-socket guard and write observer.
 3. Require the same canonical receipt, exact snapshot equality, and a zero write count.
 4. Independently rebuild the external approved projection rather than trusting receipt fields; require distinct matching policy, runtime-closure, and projection hashes.
 5. Fail without repair, cleanup, overwrite, migration, successor approval, or summary normalization on any discrepancy.
-6. Only after the actual formal v2 publication and both read-only audits pass, run `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python experiments/specchoice-v1.3.2/validation/guarded_regress.py --repo-root .` twice from the repository root. The harness must resolve and functionally preflight exactly `/usr/bin/sandbox-exec`, use explicit terminating deny rules for network, the exact formal-root/receipt/report targets, repository and user tool/dependency/cache roots, and system package prefixes plus offline/no-update controls, admit only literal `./bin/regress --all`, capture exit/output, and fail without a bare fallback on guard/profile/probe/prohibited-operation/regression error.
-7. Within each guarded run, require the formal root to contain exactly `attempt-chain.json`, `evidence-span-audit.json`, `matrix-manifest.json`, `model-call-ledger.json`, `no-call-runtime-audit.json`, `no-call-structural-audit.json`, `ordered-diagnostics.json`, `parsed-evidence.json`, `raw-evidence.json`, and `red-trigger-evidence.json`, plus the exact receipt and report; compare repository-relative inventory and raw SHA-256 before/after and fail on change/add/remove. The second complete run is the deterministic zero-write proof.
-8. Keep this native full-process guard separate from the formal `execute-red` runtime tripwire: the harness is not an evidence input, cannot authorize calls or requirements, and its narrow validation subprocess does not create a formal model/provider/credential/retrieval/network/subprocess surface.
+6. Before this audit begins, require Task 05-07-01's three stable read-only calibration tuples; Task 05-07-03 rechecks the same exact native tuple before formal access. Any host drift, successful connection, or non-EPERM/diagnostic mismatch stops without formal/evidence writes and without regression admission.
+7. Only after the actual formal v2 publication, calibration/recheck, and both read-only audits pass, run `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python experiments/specchoice-v1.3.2/validation/guarded_regress.py --repo-root .` twice from the repository root. The harness must resolve and functionally preflight exactly `/usr/bin/sandbox-exec`, use explicit terminating deny rules for network, the exact formal-root/receipt/report targets, repository and user tool/dependency/cache roots, and system package prefixes plus offline/no-update controls, admit only literal `./bin/regress --all`, capture exit/output, and fail without a bare fallback on guard/profile/probe/prohibited-operation/regression error.
+8. Within each guarded run, require the formal root to contain exactly `attempt-chain.json`, `evidence-span-audit.json`, `matrix-manifest.json`, `model-call-ledger.json`, `no-call-runtime-audit.json`, `no-call-structural-audit.json`, `ordered-diagnostics.json`, `parsed-evidence.json`, `raw-evidence.json`, and `red-trigger-evidence.json`, plus the exact receipt and report; compare repository-relative inventory and raw SHA-256 before/after and fail on change/add/remove. The second complete run is the deterministic zero-write proof.
+9. Keep this native full-process guard separate from the formal `execute-red` runtime tripwire: the calibration and harness are not evidence inputs, cannot authorize calls or requirements, and their narrow validation subprocesses do not create a formal model/provider/credential/retrieval/network/subprocess surface.
 
 ## Nyquist Status and Sign-Off
 
 - [x] Wave 0 is complete: pinned local tools and the non-authorizing preflight record exist.
 - [x] Completed 05-01 predecessor tests and decision evidence remain preserved as historical coverage.
-- [x] Rejected 05-02 and superseded 05-03 are explicitly excluded from the active task map.
-- [x] Every active 05-04..06 implementation/audit task has a named automated command; both human decisions remain blocking gates.
-- [ ] `test_authorized_execution_v2.py` exists and includes the exact positive recomputation and negative self-reference/recursion tests.
-- [ ] `validation/guarded_regress.py` and `tests/test_guarded_regress.py` exist and pass unavailable guard, bad/nonfunctional profile, prohibited child, evidence mutation, and no-network fake-local-command contracts; production has no bare/full-command override.
-- [ ] Gate A has passed and `05-04-SUMMARY.md` records the exact canonical projection fields/hash without claiming publication.
-- [ ] Gate B has confirmed a zero-delta recomputation of that same projection.
-- [ ] The actual formal set has published or failed with truthful immutable custody, and the 05-05 exact-resume audit has observed zero writes.
-- [ ] The independent 05-06 graph audit and formal zero-write replay have passed without changing evidence.
-- [ ] After actual formal v2 publication and the read-only audits, the guarded harness has run the exact `./bin/regress --all` command twice under functional native network/install denial, and both runs preserved the exact twelve-file successor evidence inventory/SHA-256 map without model/network activity.
-- [ ] `nyquist_compliant: true` may be set only after every unchecked active item above is evidenced; it remains false now because successor tests, gates, publication, and audits have not executed.
+- [x] Rejected 05-02, superseded 05-03, and partial failed-closed 05-06 are explicitly excluded from active discovery without fabricated summaries.
+- [x] `test_authorized_execution_v2.py`, Gate A, Gate B, current formal publication, and 05-05 exact-resume zero writes are recorded by completed summaries.
+- [x] The partial 05-06 harness/tests and observed construction-preflight diagnostic are preserved without claiming either full regression.
+- [ ] Task 05-07-01 records three identical bounded native `errno.EPERM` plus exact-diagnostic tuples in the terminal before any implementation/formal/evidence write; any mismatch escalates with no regression admission and no summary.
+- [ ] Task 05-07-02 proves socket construction followed by fixed-loopback/port-zero connect and admits only the calibrated return-code/stdout/stderr contract; every success or ambiguity stops before regression.
+- [ ] Task 05-07-03 rechecks the calibrated tuple, repeats the current formal zero-write audit, and runs the exact `./bin/regress --all` command twice through the corrected guard, preserving the exact twelve-file successor evidence inventory/SHA-256 map.
+- [ ] `nyquist_compliant: true` may be set only after all three 05-07 tasks are evidenced; it remains false now because calibration, corrected native denial, and both full regressions have not passed.
 
-**Approval:** pending active successor execution; no future validation is marked passed.
+**Approval:** no new authority gate is pending; only active 05-07 validation execution remains, and no future result is marked passed.

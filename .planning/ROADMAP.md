@@ -307,17 +307,19 @@ Plans:
 - `05-03-SUPERSEDED.md` — unexecuted predecessor audit; not completed and no summary exists.
 - [x] 05-04-PLAN.md — implement and freeze the separate successor contract, then obtain Gate A approval.
 - [x] 05-05-PLAN.md — rehearse the exact command, obtain Gate B confirmation, and publish only the successor namespace.
-- [ ] 05-06-PLAN.md — audit successor evidence and exact resume read-only.
+- `05-06-FAILED-CLOSED.md` / `05-06-CANCELLATION.md` — partial read-only audit and harness history preserved; native construction preflight failed closed before either full regression, no summary exists, and the plan is not completed.
+- [ ] 05-07-PLAN.md — correct only the validation-only native connection-use preflight, repeat the read-only exact-resume audit, and run two fixed native-confined full regressions.
 
 **Wave 1**
 
 - [x] 05-00: Verify and record the already-restored pinned local toolchain before the tracer, without experiment authority.
 - [x] 05-01: Implement freeze-root verification, immutable envelopes, raw-first persistence, and the stable execution plan.
 
-**Historical Waves 2-3** *(retired forward-only after rejection commit `42733101`; excluded from plan discovery)*
+**Historical Lifecycle Records** *(retired forward-only and excluded from plan discovery)*
 
 - `05-02-REJECTED.md`: Tasks 1-2 reached the final-closure checkpoint; the human rejected publication because the frozen interface did not expose the required formal command. Task 3 never ran.
 - `05-03-SUPERSEDED.md`: Never executed because its predecessor formal root was never published.
+- `05-06-FAILED-CLOSED.md`: Task 1 produced empty read-only audit commit `d95fb748`; Task 2 added the harness/tests in `46c34c8b`, then stopped at `GUARDED_REGRESS_NETWORK_PROBE_NOT_DENIED` before either full regression. `05-06-CANCELLATION.md` binds this partial history and no `05-06-SUMMARY.md` exists.
 
 **Wave 2** *(blocked on completed 05-01 and forward-only historical reconciliation)*
 
@@ -325,11 +327,11 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion and explicit Gate A approval)*
 
-- [ ] 05-05: Rehearse the unchanged successor closure, obtain Gate B final confirmation, and publish or exactly resume only the successor Red evidence set.
+- [x] 05-05: Rehearse the unchanged successor closure, obtain Gate B final confirmation, and publish or exactly resume only the successor Red evidence set.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 05-06: Independently audit the successor formal/attempt graph and prove actual exact-resume zero writes without changing evidence.
+- [ ] 05-07: Require the native guard to deny a fixed loopback connection use after socket construction, then repeat the formal zero-write audit and two guarded `./bin/regress --all` release gates without changing evidence or authority.
 
 ### Phase 6: Partition-Aware Ablation and Metamorphic Evaluation
 

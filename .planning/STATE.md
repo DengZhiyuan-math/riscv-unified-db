@@ -5,10 +5,10 @@ milestone_name: milestone
 current_phase: 05
 current_phase_name: authorized-execution-and-immutable-evidence
 status: executing
-stopped_at: Completed 05-05-PLAN.md; successor Red evidence published and exact-resume verified
-last_updated: "2026-08-05T11:01:28.671Z"
+stopped_at: 05-06 failed closed at native construction preflight; 05-07 is the sole active successor
+last_updated: "2026-08-05T13:54:43+02:00"
 last_activity: 2026-08-05
-last_activity_desc: Phase 05 execution started
+last_activity_desc: Preserved partial 05-06 history and planned the 05-07 native connection-use guard successor
 progress:
   total_phases: 7
   completed_phases: 3
@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-07-30)
 ## Current Position
 
 Phase: 05 (authorized-execution-and-immutable-evidence) — EXECUTING
-Plan: 4 of 5 active discoverable plans complete (05-00 and 05-01); 05-02 is rejected-not-completed and 05-03 is superseded/unexecuted
+Plan: 4 of 5 active discoverable plans complete (05-00, 05-01, 05-04, and 05-05); 05-02 is rejected, 05-03 is superseded, and partial 05-06 failed closed and is cancelled without a summary
 Status: Ready to execute
-Last activity: 2026-08-05 — Phase 05 execution started
+Last activity: 2026-08-05 — Preserved partial 05-06 history and planned the 05-07 native connection-use guard successor
 
-Progress: [█████████░] 86% of executable Phase 5 plans complete
+Progress: [████████░░] 80% of active discoverable Phase 5 plans complete
 
 ## Performance Metrics
 
@@ -168,11 +168,12 @@ Recent decisions affecting current work:
 - [Phase ?]: The handoff is valid only while the pinned tools, pyproject digest, and empty formal target namespaces agree.
 - [Phase ?]: User explicitly approved only the exact Phase 5 Red contract bound to policy c48b5c607aa3a6be532ca0accb7f9bfd685b1eab60f82dc2b4b4c4ce97285d15 and v6 authority 363cf85c4088f5f268692f8319b70b50f7ed717f7145ed84a6923499ae992518; byte drift requires a successor and new human gate.
 - [Phase ?]: [Phase 05 Plan 02] User selected reject-final-closure: Task 05-02-03 is prohibited because the frozen policy and CLI expose only execute-red-temporary while the planned formal publication requires execute-red. All formal, attempt, and successor targets remain absent; a versioned successor and new contract/final-closure gates are required.
-- [Phase 05]: Rejected 05-02 and unexecuted 05-03 are preserved as non-discoverable historical documents with no fabricated summaries; 05-04 through 05-06 are the only active successors, with separate Gate A and Gate B approvals before successor-only publication.
+- [Phase 05]: Rejected 05-02, unexecuted 05-03, and partial failed-closed 05-06 are preserved as non-discoverable historical documents with no fabricated summaries; 05-04 and 05-05 remain completed successors, and 05-07 is the sole active validation successor.
 - [Phase ?]: [Phase 05 Plan 04 Gate A] User selected approve-v2-contract only for persisted raw policy config/execution/red-execution-policy-v2.json (2406 bytes, 1785acf527c4d5c08790a525937f4960896ac775d5c9a6635903b384c2c8835f), runtime_closure_sha256=29558e76c09dac2b82468915567667419e5a281091201611449a6960f0b7a811, and external gate_a_projection_sha256=18e4a9a7ec40e881ff6d3994db4554a3907298a01511c566769177b51d40bdec; Phase 4 v6 raw input=363cf85c4088f5f268692f8319b70b50f7ed717f7145ed84a6923499ae992518 and authority claim=f77cdbd908222209730058be07e5ffa363c905f72183b1f6970c4d9c36e315fb. The exact execute-red ten-option schema, fixed v2 targets, Red zero matrix, conditional TS-11/TS-12 states, and target absence are approved for 05-05 pre-publication work only; no evidence publication, model/provider/credential/retrieval/network/subprocess/metric/final-conclusion/requirement-closure authority is granted.
 - [Phase ?]: [Phase 05 Plan 05] User explicitly selected Gate B confirm-v2-final-closure for the unchanged Gate-A projection 18e4a9a7ec40e881ff6d3994db4554a3907298a01511c566769177b51d40bdec; this authorizes exactly one successor Red no-call publication and its exact-resume verification only.
 - [Phase ?]: Gate B authorized exactly one local successor Red no-call publication and its zero-write exact-resume verification for the unchanged Gate-A projection 18e4a9a7ec40e881ff6d3994db4554a3907298a01511c566769177b51d40bdec.
 - [Phase ?]: Completed Red evidence authorizes only downstream Red-evidence evaluation; no model, provider, credential, retrieval, network, metric, external-publication, or final-conclusion authority is granted.
+- [Phase 05]: Plan 05-06 is failed-closed-not-completed: empty audit commit d95fb748 and harness commit 46c34c8b are preserved, native construction preflight emitted GUARDED_REGRESS_NETWORK_PROBE_NOT_DENIED before either full regression, and 05-07 may change only the validation harness/tests to require pinned denied connect use without reopening Gates A/B or formal authority.
 
 ### Pending Todos
 
@@ -191,6 +192,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-05T11:01:28.656Z
-Stopped at: Completed 05-05-PLAN.md; successor Red evidence published and exact-resume verified
-Resume file: .planning/phases/05-authorized-execution-and-immutable-evidence/05-06-PLAN.md
+Last session: 2026-08-05T13:54:43+02:00
+Stopped at: 05-06 failed closed at native construction preflight; its plan bytes and partial commits are preserved without a summary
+Resume file: .planning/phases/05-authorized-execution-and-immutable-evidence/05-07-PLAN.md
