@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.3.2
 milestone_name: milestone
-current_phase: 5
-current_phase_name: Authorized Execution and Immutable Evidence
+current_phase: 05
+current_phase_name: authorized-execution-and-immutable-evidence
 status: executing
-stopped_at: Phase 5 context gathered
-last_updated: "2026-08-04T22:43:20.701Z"
-last_activity: 2026-08-04
-last_activity_desc: Phase 04 complete, transitioned to Phase 5
+stopped_at: Completed 05-00-PLAN.md
+last_updated: "2026-08-05T07:45:59.314Z"
+last_activity: 2026-08-05
+last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 41
-  completed_plans: 32
+  completed_plans: 33
   percent: 43
 ---
 
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-30)
 
 **Core value:** Produce a reproducible, leakage-safe, falsifiable A/B/C result—positive, negative, or Red-path infeasible—without weakening gold semantics, deterministic measurement, or human control of RISC-V judgments.
-**Current focus:** Phase 04 — offline-treatments-retrieval-and-branch-freeze
+**Current focus:** Phase 05 — authorized-execution-and-immutable-evidence
 
 ## Current Position
 
-Phase: 5 — Authorized Execution and Immutable Evidence
-Plan: Not started
+Phase: 05 (authorized-execution-and-immutable-evidence) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-08-04 — Phase 04 complete, transitioned to Phase 5
+Last activity: 2026-08-05 — Phase 05 execution started
 
-Progress: [████████░░] 78%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -88,6 +88,7 @@ Progress: [████████░░] 78%
 | Phase 03 P03 | multi-session | 3 tasks | 8 files |
 | Phase 03 P04 | multi-session | 3 tasks | 9 files |
 | Phase 04 P01 | 1h 15m | 2 tasks | 8 files |
+| Phase 05 P00 | 5min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -160,6 +161,8 @@ Recent decisions affecting current work:
 - [Phase ?]: B and C use the same closed parser/output schema; only A is frame-free.
 - [Phase ?]: Advisory patterns are canonical config validated at import and return only ordered warning Diagnostics.
 - [Phase ?]: No provider, model, retrieval, CLI, dependency, or external-action surface is introduced in Wave 1.
+- [Phase ?]: Wave 0 records only the restored local toolchain and explicitly grants no experiment or formal-evidence authority.
+- [Phase ?]: The handoff is valid only while the pinned tools, pyproject digest, and empty formal target namespaces agree.
 
 ### Pending Todos
 
@@ -178,6 +181,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-04T21:49:41.500Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-authorized-execution-and-immutable-evidence/05-CONTEXT.md
+Last session: 2026-08-05T07:45:59.300Z
+Stopped at: Completed 05-00-PLAN.md
+Resume file: None

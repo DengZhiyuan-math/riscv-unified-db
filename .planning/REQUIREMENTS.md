@@ -30,12 +30,12 @@ Requirements for the frozen SpecChoice v1.3.2 execution baseline. Each maps to e
 - [x] **TS-04** `[ALL]`: The operator receives strict validation of the canonical adjudication schema, including the unique nullable `surfaced=false` representation, rejection of `parameter_status:not_surfaced`, unknown-key rejection, enum enforcement, and no silent repair.
 - [x] **TS-05** `[ALL]`: Tests and reports expose every required stable diagnostic code with structured fields, while `ACCEPTED_PARAMETER_NAME_MISSING` remains an identity warning that cannot change disposition correctness.
 - [ ] **TS-06** `[ALL]`: The reviewer receives independently calculated surfacing, disposition, exact/incorrect/missing identity, classify-out, and evidence-integrity outcomes; Green/Yellow additionally reports each frame axis and retrieval quality separately.
-- [ ] **TS-07** `[ALL]`: The reviewer can audit at least one non-empty verbatim evidence span for every surfaced finding and can inspect immutable raw outputs, parsed outputs, and parser diagnostics as separate artifacts.
+- [x] **TS-07** `[ALL]`: The reviewer can audit at least one non-empty verbatim evidence span for every surfaced finding and can inspect immutable raw outputs, parsed outputs, and parser diagnostics as separate artifacts.
 - [x] **TS-08** `[ALL]`: Automated validation proves provenance for every data item, zero prototype/held-out example overlap, zero prototype/strict-core primary-family overlap, registered primary families, compatible registry versions, and no held-out passage in prompt demonstrations.
 - [x] **TS-09** `[ALL]`: The human reviewer controls labels, dataset membership, primary families, contrastive pairs and axes, relevance judgments, metamorphic expectations, fallback state, and public communication; any frozen-input change stops the run, enters the decision log, increments the experiment version, and triggers symmetric reruns.
 - [x] **TS-10** `[ALL]`: A machine-evaluated and human-approved gate records exactly one Green, Yellow, or Red state plus `N_strict` and repeat count, blocks model execution on every Red trigger, and prevents model output from compensating for unreliable gold.
-- [ ] **TS-11** `[G/Y]`: The operator can execute every preregistered strict-core case under A, B, and C with the same model snapshot, sampling, target context, shared guidance, decision space, evidence rules, exactly two demonstration pairs, and repeat count; only the intended treatment differs.
-- [ ] **TS-12** `[G/Y]`: The reviewer can inspect every call's prompt hash, actual input/output tokens, output limit, model snapshot, sampling settings, raw response, parse result, refusal/truncation state, and retry/failure state, with no missing strict-core A/B/C cell.
+- [x] **TS-11** `[G/Y]`: The operator can execute every preregistered strict-core case under A, B, and C with the same model snapshot, sampling, target context, shared guidance, decision space, evidence rules, exactly two demonstration pairs, and repeat count; only the intended treatment differs.
+- [x] **TS-12** `[G/Y]`: The reviewer can inspect every call's prompt hash, actual input/output tokens, output limit, model snapshot, sampling settings, raw response, parse result, refusal/truncation state, and retry/failure state, with no missing strict-core A/B/C cell.
 - [ ] **TS-13** `[G/Y]`: The operator can run four frozen, human-reviewed metamorphic minimal pairs covering choice-space origin, true WARL versus fixed legal set, hardware versus software authority, and normative versus NOTE/example language, and report the expected directional relation.
 - [ ] **TS-14** `[ALL]`: The reviewer receives case-level results, branch and split counts, failure taxonomy, limitations, and a bounded positive, negative, or Red feasibility conclusion that makes none of the prohibited statistical, full-corpus, private-pipeline, confirmed-parameter, or merge-readiness claims.
 - [ ] **TS-15** `[ALL]`: Equivalent captured inputs produce byte-identical canonical JSON using UTF-8/LF, NFC normalization, stable array ordering, sorted keys, no absolute paths or timestamps in core reports, content hashes, and exact reproducibility commands.
@@ -136,12 +136,12 @@ Roadmap creation maps every v1 requirement to exactly one phase.
 | TS-04 | Phase 2 | Complete |
 | TS-05 | Phase 2 | Complete |
 | TS-06 | Phase 6 | Pending |
-| TS-07 | Phase 5 | Pending |
+| TS-07 | Phase 5 | Complete |
 | TS-08 | Phase 3 | Complete |
 | TS-09 | Phase 3 | Complete |
 | TS-10 | Phase 4 | Complete |
-| TS-11 | Phase 5 | Pending |
-| TS-12 | Phase 5 | Pending |
+| TS-11 | Phase 5 | Complete |
+| TS-12 | Phase 5 | Complete |
 | TS-13 | Phase 6 | Pending |
 | TS-14 | Phase 7 | Pending |
 | TS-15 | Phase 7 | Pending |
