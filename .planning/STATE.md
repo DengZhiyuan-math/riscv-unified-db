@@ -5,10 +5,10 @@ milestone_name: milestone
 current_phase: 05
 current_phase_name: authorized-execution-and-immutable-evidence
 status: executing
-stopped_at: FWD-05-08-PORT-20260805 authorized the exact versioned Darwin arm64 source-port contract; 05-08 is ready to execute from Task 01
-last_updated: "2026-08-05T16:01:15Z"
+stopped_at: FWD-05-08-CODE-BEHAVIOR-PROJECTION-V2-20260805 approved the versioned code-and-behavior successor; resume Task 01 from exact RED commit 46ade93d
+last_updated: "2026-08-05T16:33:40Z"
 last_activity: 2026-08-05
-last_activity_desc: Reconciled immutable 05-07 history with the exact forward-authorized 05-08 Darwin arm64 source-port contract
+last_activity_desc: Preserved the original 05-08 whole-binary mismatch and authorized only the versioned named-section plus oracle successor
 progress:
   total_phases: 7
   completed_phases: 3
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-07-30)
 
 Phase: 05 (authorized-execution-and-immutable-evidence) — EXECUTING
 Plan: 4 of 5 active discoverable plans complete (05-00, 05-01, 05-04, and 05-05); 05-02 is rejected, 05-03 is superseded, and partial 05-06/05-07 are failed-closed historical records without summaries
-Status: Ready to execute the exact forward-authorized 05-08 source/patch/oracle/cache contract; no port or regression result is yet claimed
-Last activity: 2026-08-05 — Reconciled immutable 05-07 history with `FWD-05-08-PORT-20260805`
+Status: Ready to finish Task 01 from exact RED commit `46ade93d` under the projection-v2 successor; original unequal full hashes remain failed diagnostics and no port or regression result is claimed
+Last activity: 2026-08-05 — Approved `FWD-05-08-CODE-BEHAVIOR-PROJECTION-V2-20260805` without changing any formal or historical authority
 
 Progress: [████████░░] 80% of active discoverable Phase 5 plans complete
 
@@ -176,9 +176,13 @@ Recent decisions affecting current work:
 - [Phase 05]: Plan 05-06 is failed-closed-not-completed: empty audit commit d95fb748 and harness commit 46c34c8b are preserved, native construction preflight emitted GUARDED_REGRESS_NETWORK_PROBE_NOT_DENIED before either full regression, and 05-07 may change only the validation harness/tests to require pinned denied connect use without reopening Gates A/B or formal authority.
 - [Phase 05]: Plan 05-07 is failed-closed-not-completed: cancellation binds the exact historical plan and partial validation worktree hashes, the first guarded child stopped at Bundler platform admission because baseline Gemfile.lock omitted arm64-darwin-23, zero of two full regressions completed, and no 05-07 summary exists.
 - [Phase 05]: The earlier lock-platform-only scope for active 05-08 remains predecessor planning history, not current authority. `05-07-CANCELLATION.md` and `05-07-FAILED-CLOSED.md` stay byte-identical and remain truthful immutable records; no 05-07 summary or completion claim may be created.
-- [Phase 05]: Forward decision `FWD-05-08-PORT-20260805` authorizes only `darwin-arm64-source-port-20260805`: TheProjecter/eqntott `392759e6493a46f1d1ed7d9fb1c7c31197b0f6a8`, jar-ben/mustool `17fa9f9542a9ce05328dfccd1cd410f05f741ab3`, psksvp/espresso-ab-1.0 `18f59c723545f11bcb46d9e38e936531c990e5cf`, the two named versioned patch paths, committed fixture/oracle bytes, disposable source/build/staging roots, and the exact all-six no-overwrite external UDB cache set. Different bytes or targets require another explicit forward decision.
+- [Phase 05]: Predecessor decision `FWD-05-08-PORT-20260805` froze `darwin-arm64-source-port-20260805`: the exact three source commits, two patch paths, oracle bytes, disposable roots, and all-six no-overwrite cache set. Those boundaries remain inputs to projection-v2; only its failed whole-binary equality predicate is superseded.
 - [Phase 05]: Current `Gemfile.lock` (`e1231c14...57c`), the 05-07 guarded harness (`739b9851...21e5`), and guarded tests (`ea245fe6...4ef`) are preserved read-only predecessor inputs, not 05-08 outputs. The already authorized Darwin arm64 Z3 and locked `node_modules` restores remain fixed inputs and are not repeated.
-- [Phase 05]: `contract-validation.json` is the sole non-authoritative 05-08 handoff: Task 01 creates `tracer_validated`, Task 02 binds its SHA-256 and advances to `all_tools_validated_cache_unpublished`, and Task 03 must consume that exact state without source acquisition, patch/build/oracle reconstruction, or prior-gate replay before cache/formal/regression work.
+- [Phase 05]: `runs/native-port-darwin-arm64-20260805/original-whole-binary-sha-mismatch.json` is immutable failed diagnostic custody; the distinct `runs/native-port-darwin-arm64-projection-v2-20260805/contract-validation.json` is the sole active non-authoritative handoff. Task 01 creates `tracer_validated`, Task 02 advances its exact digest to `all_tools_validated_cache_unpublished`, and Task 03 cannot reconstruct source/patch/build/projection/oracle decisions before cache/formal/regression work.
+- [Phase 05]: The original 05-08 whole-binary equality result remains failed immutable diagnostic custody: two 297208-byte regular Mach-O arm64 espresso files had SHA-256 `545a788e0e6dde0dc268d0575649a1335e9c67cd881df584d149cdbb567996c3` and `6ee19c6136897c3b9ea8403d89339946eb3fec5cb563e27e67654078affd1485`; fixed `/usr/bin/cmp -l LEFT RIGHT` emitted 544 lines with exact stdout SHA-256 `2f236895ef71c74cd9194eecb140abf7b1fb915c0a19ac8aff6b5d329d564726`. It is not normalized or reclassified as success.
+- [Phase 05]: User-approved forward decision `FWD-05-08-CODE-BEHAVIOR-PROJECTION-V2-20260805` supersedes only two-build whole-binary equality. The successor requires same-size regular Mach-O arm64 identity, fixed `/usr/bin/file`/`lipo`/`otool` argv, exact raw bytes and layout for ordered `__TEXT,__text` and `__TEXT,__stubs`, all full hashes/differences recorded, and the exact oracle corpus twice under native network/cache-write denial.
+- [Phase 05]: No strip, relink, normalization, byte masking/zeroing/rewriting, disassembly-text comparison, dynamic ignore region, arbitrary metadata allowlist, changed source/patch/argv/executable section/functional output, cache-before-all-tools, formal drift, or additional authority is permitted.
+- [Phase 05]: Commit `46ade93dda1b55eb76a2938855d4beb1487259c0` and `tests/test_native_port_contract.py` SHA-256 `83426d8bfb2507d53787ded7d1f59f11faff45050cdb9e22863b8fb92b41a69f` are the exact Task 01 RED predecessor. Execution must finish the missing implementation and preserve unrelated `Gemfile.lock`/guarded-harness worktree changes rather than reverting or absorbing them.
 
 ### Pending Todos
 
@@ -188,9 +192,9 @@ None yet.
 
 - Exact provider/model snapshot and Python lock resolution remain intentionally conditional because the approved Phase 3 authority requires the Red no-model branch.
 - Phase 4 must preserve `red_required` and obtain its own branch decision without converting Phase 3 eligibility into execution authority.
-- Preserved 05-08 diagnostic history: after the user-authorized local Z3 and locked `node_modules` restores, the second native-confined `./bin/regress --all` returned 1 (`stdout_sha256=029e59e5e1ccccd859cfda14253020cdcdea43e9548d7545a7d7323bffd47d54`, `stderr_sha256=6d8495702e26e5bdc81c08348e616015894e9347b215d0e9b1868d6ed070c9f8`). No bare fallback, formal write, summary, or behavior claim occurred. `FWD-05-08-PORT-20260805` now authorizes only the exact forward recovery contract before another full invocation.
+- Preserved 05-08 diagnostic history: after the user-authorized local Z3 and locked `node_modules` restores, the second native-confined `./bin/regress --all` returned 1 (`stdout_sha256=029e59e5e1ccccd859cfda14253020cdcdea43e9548d7545a7d7323bffd47d54`, `stderr_sha256=6d8495702e26e5bdc81c08348e616015894e9347b215d0e9b1868d6ed070c9f8`). No bare fallback, formal write, summary, or behavior claim occurred. Projection-v2 cannot begin cache/formal/regression work until its complete all-tools section-and-oracle handoff validates.
 - Preserved repeat diagnostic: it returned 1 with formal before/after equality because `eqntott-392759e` and `must-17fa9f9` were absent from the protected UDB cache and the confined child correctly denied their implicit download/write attempts. Official UDB `arm64` release artifacts remain AlmaLinux binaries, not Darwin executables; the only currently authorized compatible path is the exact source-only contract above, with no Linux-binary substitution.
-- Preserved temporary source trial: only `/private/tmp` used exact commits `392759e6493a46f1d1ed7d9fb1c7c31197b0f6a8` (eqntott), `17fa9f9542a9ce05328dfccd1cd410f05f741ab3` (mustool), and `18f59c723545f11bcb46d9e38e936531c990e5cf` (espresso). `espresso` built but was withheld because the set was incomplete; `eqntott` required compiler-diagnostic relaxations and failed its upstream bundled example; `mustool` failed on a source/header `memUsedPeak` signature mismatch. No cache target, repository source, formal evidence, or authority file changed. The current forward decision admits only the named repository patches and committed oracle gate; it does not convert any temporary result into evidence.
+- Preserved temporary source trial: the exact source commits remain unchanged; eqntott failed its bundled example, mustool failed on the `memUsedPeak` signature mismatch, and espresso produced the unequal whole-binary pair recorded above. The selected `__TEXT,__text` and `__TEXT,__stubs` raw bytes matched in the diagnostic pair, but that observation is not itself successor evidence. No cache target, repository source, formal evidence, or authority file changed; fresh projection-v2 builds must independently recompute every section and oracle result.
 
 ## Deferred Items
 
@@ -200,6 +204,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-05T18:01:15+02:00
-Stopped at: `FWD-05-08-PORT-20260805` reconciled current 05-08 authority with immutable 05-07 history; no source-port task or behavior result has executed
+Last session: 2026-08-05T18:33:40+02:00
+Stopped at: `FWD-05-08-CODE-BEHAVIOR-PROJECTION-V2-20260805` approved only the fixed named-section plus twice-repeated oracle successor; resume the existing Task 01 RED lineage without touching unrelated changes
 Resume file: .planning/phases/05-authorized-execution-and-immutable-evidence/05-08-PLAN.md
