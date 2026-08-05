@@ -5,10 +5,10 @@ milestone_name: milestone
 current_phase: 05
 current_phase_name: authorized-execution-and-immutable-evidence
 status: executing
-stopped_at: FWD-05-08-CODE-BEHAVIOR-PROJECTION-V2-20260805 approved the versioned code-and-behavior successor; resume Task 01 from exact RED commit 46ade93d
+stopped_at: FWD-05-08-CREATE-ONLY-RECORD-SUCCESSOR-20260805 preserved the root failed_closed record and authorized Task 01 to resume from exact RED commit 46ade93d only at create-only attempt-02
 last_updated: "2026-08-05T16:33:40Z"
 last_activity: 2026-08-05
-last_activity_desc: Preserved the original 05-08 whole-binary mismatch and authorized only the versioned named-section plus oracle successor
+last_activity_desc: Preserved the original 05-08 root failed_closed record at exact SHA256/state/diagnostic and authorized only the forward-only create-only attempt-02/03/04 successor chain
 progress:
   total_phases: 7
   completed_phases: 3
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-07-30)
 
 Phase: 05 (authorized-execution-and-immutable-evidence) — EXECUTING
 Plan: 4 of 5 active discoverable plans complete (05-00, 05-01, 05-04, and 05-05); 05-02 is rejected, 05-03 is superseded, and partial 05-06/05-07 are failed-closed historical records without summaries
-Status: Ready to finish Task 01 from exact RED commit `46ade93d` under the projection-v2 successor; original unequal full hashes remain failed diagnostics and no port or regression result is claimed
-Last activity: 2026-08-05 — Approved `FWD-05-08-CODE-BEHAVIOR-PROJECTION-V2-20260805` without changing any formal or historical authority
+Status: Ready to finish Task 01 from exact RED commit `46ade93d` by creating only `attempts/attempt-02/contract-validation.json`; the root failed-closed record and original unequal full hashes remain immutable diagnostics, and no port or regression result is claimed
+Last activity: 2026-08-05 — Approved `FWD-05-08-CREATE-ONLY-RECORD-SUCCESSOR-20260805` without changing any formal, historical, or predecessor-record byte
 
 Progress: [████████░░] 80% of active discoverable Phase 5 plans complete
 
@@ -178,9 +178,10 @@ Recent decisions affecting current work:
 - [Phase 05]: The earlier lock-platform-only scope for active 05-08 remains predecessor planning history, not current authority. `05-07-CANCELLATION.md` and `05-07-FAILED-CLOSED.md` stay byte-identical and remain truthful immutable records; no 05-07 summary or completion claim may be created.
 - [Phase 05]: Predecessor decision `FWD-05-08-PORT-20260805` froze `darwin-arm64-source-port-20260805`: the exact three source commits, two patch paths, oracle bytes, disposable roots, and all-six no-overwrite cache set. Those boundaries remain inputs to projection-v2; only its failed whole-binary equality predicate is superseded.
 - [Phase 05]: Current `Gemfile.lock` (`e1231c14...57c`), the 05-07 guarded harness (`739b9851...21e5`), and guarded tests (`ea245fe6...4ef`) are preserved read-only predecessor inputs, not 05-08 outputs. The already authorized Darwin arm64 Z3 and locked `node_modules` restores remain fixed inputs and are not repeated.
-- [Phase 05]: `runs/native-port-darwin-arm64-20260805/original-whole-binary-sha-mismatch.json` is immutable failed diagnostic custody; the distinct `runs/native-port-darwin-arm64-projection-v2-20260805/contract-validation.json` is the sole active non-authoritative handoff. Task 01 creates `tracer_validated`, Task 02 advances its exact digest to `all_tools_validated_cache_unpublished`, and Task 03 cannot reconstruct source/patch/build/projection/oracle decisions before cache/formal/regression work.
+- [Phase 05]: `runs/native-port-darwin-arm64-20260805/original-whole-binary-sha-mismatch.json` is immutable failed diagnostic custody. The root `runs/native-port-darwin-arm64-projection-v2-20260805/contract-validation.json` is also immutable at SHA-256 `7f6d0761ccdb775ddb62e13ca641dd389819e587acaf29ca4f805f0ab502a1fd`, state `failed_closed`, diagnostic `ORACLE_EXECUTION_NOT_IMPLEMENTED`; it is a read-only predecessor, not an active mutable handoff.
 - [Phase 05]: The original 05-08 whole-binary equality result remains failed immutable diagnostic custody: two 297208-byte regular Mach-O arm64 espresso files had SHA-256 `545a788e0e6dde0dc268d0575649a1335e9c67cd881df584d149cdbb567996c3` and `6ee19c6136897c3b9ea8403d89339946eb3fec5cb563e27e67654078affd1485`; fixed `/usr/bin/cmp -l LEFT RIGHT` emitted 544 lines with exact stdout SHA-256 `2f236895ef71c74cd9194eecb140abf7b1fb915c0a19ac8aff6b5d329d564726`. It is not normalized or reclassified as success.
 - [Phase 05]: User-approved forward decision `FWD-05-08-CODE-BEHAVIOR-PROJECTION-V2-20260805` supersedes only two-build whole-binary equality. The successor requires same-size regular Mach-O arm64 identity, fixed `/usr/bin/file`/`lipo`/`otool` argv, exact raw bytes and layout for ordered `__TEXT,__text` and `__TEXT,__stubs`, all full hashes/differences recorded, and the exact oracle corpus twice under native network/cache-write denial.
+- [Phase 05]: User-approved forward decision `FWD-05-08-CREATE-ONLY-RECORD-SUCCESSOR-20260805` authorizes only a create-only custody chain from the immutable root failure: Task 01 creates `attempts/attempt-02/contract-validation.json` in `tracer_validated` with exact root path/SHA-256/state/diagnostic binding; Task 02 creates attempt-03 in `all_tools_validated_cache_unpublished` with exact attempt-02 path/SHA-256/state binding; Task 03 creates attempt-04 in `validation_complete` or `failed_closed` with exact attempt-03 path/SHA-256/state binding. No predecessor may be overwritten, deleted, moved, rewritten, truncated, relabelled, or replaced by an alternate path.
 - [Phase 05]: No strip, relink, normalization, byte masking/zeroing/rewriting, disassembly-text comparison, dynamic ignore region, arbitrary metadata allowlist, changed source/patch/argv/executable section/functional output, cache-before-all-tools, formal drift, or additional authority is permitted.
 - [Phase 05]: Commit `46ade93dda1b55eb76a2938855d4beb1487259c0` and `tests/test_native_port_contract.py` SHA-256 `83426d8bfb2507d53787ded7d1f59f11faff45050cdb9e22863b8fb92b41a69f` are the exact Task 01 RED predecessor. Execution must finish the missing implementation and preserve unrelated `Gemfile.lock`/guarded-harness worktree changes rather than reverting or absorbing them.
 
@@ -205,5 +206,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-08-05T18:33:40+02:00
-Stopped at: `FWD-05-08-CODE-BEHAVIOR-PROJECTION-V2-20260805` approved only the fixed named-section plus twice-repeated oracle successor; resume the existing Task 01 RED lineage without touching unrelated changes
+Stopped at: `FWD-05-08-CREATE-ONLY-RECORD-SUCCESSOR-20260805` preserved the root failed-closed record at exact SHA-256/state/diagnostic and authorized only create-only attempt-02/03/04; resume the existing Task 01 RED lineage at attempt-02 without touching unrelated changes
 Resume file: .planning/phases/05-authorized-execution-and-immutable-evidence/05-08-PLAN.md

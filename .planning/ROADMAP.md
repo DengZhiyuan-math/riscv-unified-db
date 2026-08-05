@@ -309,7 +309,7 @@ Plans:
 - [x] 05-05-PLAN.md — rehearse the exact command, obtain Gate B confirmation, and publish only the successor namespace.
 - `05-06-FAILED-CLOSED.md` / `05-06-CANCELLATION.md` — partial read-only audit and harness history preserved; native construction preflight failed closed before either full regression, no summary exists, and the plan is not completed.
 - `05-07-FAILED-CLOSED.md` / `05-07-CANCELLATION.md` — partial native-guard correction preserved; the first guarded child stopped at Bundler platform admission before the regression suite, zero of two full regressions completed, and no summary exists.
-- [ ] 05-08-PLAN.md — finish the exact `46ade93d` RED predecessor under the versioned `darwin-arm64-source-port-projection-v2-20260805` contract; preserve the original whole-binary mismatch, require fixed named executable-section raw bytes plus twice-repeated oracle behavior, then admit cache/formal/two guarded regressions.
+- [ ] 05-08-PLAN.md — finish exact RED predecessor `46ade93d` under the versioned projection contract; preserve the root failed-closed record at exact SHA-256/state/diagnostic, resume only through create-only attempt-02/03/04 with exact predecessor bindings, require fixed named executable-section raw bytes plus twice-repeated oracle behavior, then admit cache/formal/two guarded regressions.
 
 **Wave 1**
 
@@ -328,7 +328,7 @@ Plans:
 - `FWD-05-08-PORT-20260805` supersedes only the earlier prospective lock-platform-only scope for still-active 05-08. It does not edit, reinterpret, complete, or weaken the exact 05-07 cancellation/failed-closed bytes; they remain immutable historical evidence of the earlier authority, blocker, zero completed regressions, and absent summary.
 - The authorized contract is exactly TheProjecter/eqntott `392759e6493a46f1d1ed7d9fb1c7c31197b0f6a8`, jar-ben/mustool `17fa9f9542a9ce05328dfccd1cd410f05f741ab3`, psksvp/espresso-ab-1.0 `18f59c723545f11bcb46d9e38e936531c990e5cf`, the named eqntott and mustool repository patch paths, espresso with no patch, committed fixture/oracle bytes, disposable source/build/staging roots, and the exact all-six no-overwrite external UDB cache targets. Any drift requires another explicit forward decision.
 - Current `Gemfile.lock`, the cancellation-bound guarded harness/tests, and the already authorized Darwin arm64 Z3 and locked `node_modules` restores are read-only predecessor inputs, not 05-08 outputs. The source-port/cache record remains non-authoritative and cannot alter Gates A/B, formal Red bytes, D-01 through D-16, provider/model/retrieval/publication authority, or requirement state.
-- Tasks 01/02 must leave one monotonic `contract-validation.json` handoff (`tracer_validated` then `all_tools_validated_cache_unpublished` with predecessor SHA-256 binding). Task 03 cannot reconstruct or rerun those source/patch/build/oracle decisions; only the exact handoff can admit cache, formal, and final-regression gates.
+- The root `runs/native-port-darwin-arm64-projection-v2-20260805/contract-validation.json` is immutable at SHA-256 `7f6d0761ccdb775ddb62e13ca641dd389819e587acaf29ca4f805f0ab502a1fd`, state `failed_closed`, diagnostic `ORACLE_EXECUTION_NOT_IMPLEMENTED`. Per `FWD-05-08-CREATE-ONLY-RECORD-SUCCESSOR-20260805`, Task 01 creates only attempt-02 in `tracer_validated`, Task 02 creates only attempt-03 in `all_tools_validated_cache_unpublished`, and Task 03 creates only terminal attempt-04; each binds the exact predecessor path/SHA-256/state and applicable root diagnostic. No overwrite, delete, move, rewrite, truncation, relabel, reconstruction, or alternate successor path is authorized.
 
 **Versioned 05-08 Reproducibility Successor**
 
@@ -336,6 +336,7 @@ Plans:
 - `FWD-05-08-CODE-BEHAVIOR-PROJECTION-V2-20260805` supersedes only whole-binary equality. Fresh two-build pairs must have the same size and regular Mach-O arm64 identity, identical ordered `__TEXT,__text` and `__TEXT,__stubs` layout/flags/raw bytes, and exact oracle outputs twice under native network/cache-write denial; both full hashes and every differing byte are retained.
 - The validator freezes exact `/usr/bin/file --brief`, `/usr/bin/lipo -archs`, `/usr/bin/otool -L`, and `/usr/bin/otool -l` argv and independently parses raw Mach-O section bytes. Strip, relink, normalization, byte rewriting/masking, disassembly-text equality, dynamic ignore regions, arbitrary metadata allowlists, or changed source/patch/argv/selected section/functional output fail closed.
 - Commit `46ade93d` is Task 01's exact RED predecessor. Execution completes its missing modules/tests and preserves unrelated dirty `Gemfile.lock` and guarded-harness worktree changes. No cache, formal replay, or regression begins before the complete three-tool projection-and-oracle handoff validates, and no additional authority is granted.
+- `FWD-05-08-CREATE-ONLY-RECORD-SUCCESSOR-20260805` changes only record custody after the preserved root failure. It does not change sources, patches, fixed identity argv, selected sections, oracle bytes, cache targets, formal bytes, regression count, D-01 through D-16, requirement state, or any model/provider/retrieval/publication authority.
 
 **Wave 2** *(blocked on completed 05-01 and forward-only historical reconciliation)*
 
@@ -347,7 +348,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 05-08: Preserve the original full-hash mismatch, finish `46ade93d`, freeze exact sources/patches/fixed identity argv, validate all three same-size regular Mach-O arm64 pairs by exact raw `__TEXT,__text`/`__TEXT,__stubs` bytes and every oracle twice while recording all full hashes/differences, then and only then publish/exact-resume the all-six cache, repeat formal zero-write exact-resume, and complete two guarded `./bin/regress --all` gates without changing evidence or authority.
+- [ ] 05-08: Preserve the original full-hash mismatch and root failed-closed projection record, finish `46ade93d` only through create-only attempt-02/03/04 with exact predecessor bindings, freeze exact sources/patches/fixed identity argv, validate all three same-size regular Mach-O arm64 pairs by exact raw `__TEXT,__text`/`__TEXT,__stubs` bytes and every oracle twice while recording all full hashes/differences, then and only then publish/exact-resume the all-six cache, repeat formal zero-write exact-resume, and complete two guarded `./bin/regress --all` gates without changing evidence or authority.
 
 ### Phase 6: Partition-Aware Ablation and Metamorphic Evaluation
 
