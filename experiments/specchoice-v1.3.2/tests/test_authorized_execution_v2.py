@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
 import shutil
 import tempfile
 import unittest
@@ -51,11 +52,11 @@ class AuthorizedExecutionV2Tests(unittest.TestCase):
         stdout, stderr = io.StringIO(), io.StringIO()
         previous = Path.cwd()
         try:
-            __import__("os").chdir(root)
+            os.chdir(root)
             with redirect_stdout(stdout), redirect_stderr(stderr):
                 return main(argv or self._argv()), stdout.getvalue(), stderr.getvalue()
         finally:
-            __import__("os").chdir(previous)
+            os.chdir(previous)
 
     def test_exact_execute_red_contract_publishes_complete_v2_set_in_copy(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
