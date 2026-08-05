@@ -8,10 +8,12 @@ import base64
 import hashlib
 import json
 import os
+import re
 import stat
 import struct
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -75,6 +77,16 @@ def read_root_predecessor(path: Path) -> tuple[dict[str, Any], str]:
     ):
         raise ValidationError("PREDECESSOR_STATE_MISMATCH")
     return payload, digest
+
+
+def read_successor_predecessor(path: Path, required_stage: str) -> tuple[dict[str, Any], str]:
+    """Read a create-only predecessor at the stage required by its successor."""
+    if path.is_absolute():
+        raise ValidationError("PREDECESSOR_PATH_NOT_RELATIVE")
+    payload = _load_object(path, diagnostic="PREDECESSOR_PARSE_FAILED")
+    if payload.get("state") != required_stage:
+        raise ValidationError("PREDECESSOR_STATE_MISMATCH")
+    return payload, _sha256(path)
 
 
 def read_original_diagnostic(path: Path) -> str:
@@ -240,6 +252,45 @@ def _oracle_bytes(case: dict[str, Any], field: str) -> bytes:
         raise ValidationError("ORACLE_ENCODING_INVALID") from error
 
 
+def _oracle_file_map(case: dict[str, Any], field: str) -> dict[str, bytes]:
+    value = case.get(field, {})
+    if not isinstance(value, dict):
+        raise ValidationError("ORACLE_FILE_MAP_INVALID")
+    files: dict[str, bytes] = {}
+    for token, encoded in value.items():
+        if not isinstance(token, str) or not re.fullmatch(r"__[A-Z][A-Z0-9_]*__", token) or not isinstance(encoded, str):
+            raise ValidationError("ORACLE_FILE_MAP_INVALID")
+        try:
+            files[token] = base64.b64decode(encoded, validate=True)
+        except ValueError as error:
+            raise ValidationError("ORACLE_ENCODING_INVALID") from error
+    return files
+
+
+def _prepare_oracle_files(case: dict[str, Any], argv: list[str], root: Path) -> tuple[list[str], dict[str, Path], dict[str, bytes]]:
+    inputs = _oracle_file_map(case, "input_files")
+    outputs = _oracle_file_map(case, "output_files")
+    if set(inputs) & set(outputs):
+        raise ValidationError("ORACLE_FILE_TOKEN_DUPLICATE")
+    paths: dict[str, Path] = {}
+    for index, (token, contents) in enumerate(inputs.items()):
+        suffix = ".cnf" if token.endswith("_CNF__") else ""
+        path = root / f"input-{index}{suffix}"
+        path.write_bytes(contents)
+        paths[token] = path
+    expected: dict[str, bytes] = {}
+    for index, (token, contents) in enumerate(outputs.items()):
+        path = root / f"output-{index}"
+        paths[token] = path
+        expected[token] = contents
+    substituted = [str(paths.get(argument, argument)) for argument in argv]
+    if any(token not in argv for token in paths):
+        raise ValidationError("ORACLE_FILE_TOKEN_UNUSED")
+    if any(argument.startswith("__") and argument.endswith("__") for argument in substituted):
+        raise ValidationError("ORACLE_FILE_TOKEN_UNKNOWN")
+    return substituted, {token: paths[token] for token in outputs}, expected
+
+
 def validate_oracles(
     operational_root: Path,
     oracle: dict[str, Any],
@@ -265,21 +316,26 @@ def validate_oracles(
                     argv = case.get("argv")
                     if not isinstance(argv, list) or not argv or not all(isinstance(item, str) for item in argv):
                         raise ValidationError("ORACLE_ARGV_INVALID")
-                    if "__OUTPUT__" in argv:
-                        raise ValidationError("ORACLE_OUTPUT_WRITE_FORBIDDEN")
-                    result = runner(
-                        [str(SANDBOX_EXEC), "-p", native_oracle_profile(), str(candidate), *argv],
-                        input=_oracle_bytes(case, "stdin_base64"),
-                        capture_output=True,
-                        check=False,
-                    )
-                    if (
-                        result.returncode != case.get("returncode")
-                        or result.stdout != _oracle_bytes(case, "stdout_base64")
-                        or result.stderr != _oracle_bytes(case, "stderr_base64")
-                    ):
-                        raise ValidationError("ORACLE_OUTPUT_MISMATCH")
-                    results.append({"tool": tool, "build": build, "repetition": repetition, "argv": argv})
+                    work_root = operational_root / "oracle-work"
+                    work_root.mkdir(parents=True, exist_ok=True)
+                    with tempfile.TemporaryDirectory(dir=work_root) as directory:
+                        resolved_argv, output_paths, output_expectations = _prepare_oracle_files(case, argv, Path(directory))
+                        result = runner(
+                            [str(SANDBOX_EXEC), "-p", native_oracle_profile(), str(candidate), *resolved_argv],
+                            input=_oracle_bytes(case, "stdin_base64"),
+                            capture_output=True,
+                            check=False,
+                            cwd=directory,
+                        )
+                        outputs_match = all(path.is_file() and not path.is_symlink() and path.read_bytes() == output_expectations[token] for token, path in output_paths.items())
+                        if (
+                            result.returncode != case.get("returncode")
+                            or result.stdout != _oracle_bytes(case, "stdout_base64")
+                            or result.stderr != _oracle_bytes(case, "stderr_base64")
+                            or not outputs_match
+                        ):
+                            raise ValidationError("ORACLE_OUTPUT_MISMATCH")
+                        results.append({"tool": tool, "build": build, "repetition": repetition, "argv": argv})
     return results
 
 
@@ -296,6 +352,7 @@ def main(argv: list[str] | None = None) -> int:
     validate.add_argument("--record-mode")
     validate.add_argument("--create-stage")
     validate.add_argument("--advance-stage")
+    validate.add_argument("--require-predecessor-stage")
     validate.add_argument("--oracle-repetitions", type=int, required=True)
     validate.add_argument("--reproducibility-predicate", required=True)
     validate.add_argument("--full-binary-differences", required=True)
@@ -325,14 +382,25 @@ def main(argv: list[str] | None = None) -> int:
             or args.reproducibility_predicate != "named-executable-sections-and-oracle"
             or args.full_binary_differences != "record-all"
             or args.record_mode != "create-only"
-            or args.tools != ["espresso"]
-            or args.create_stage != "tracer_validated"
             or args.advance_stage is not None
             or args.predecessor_record is None
             or args.original_diagnostic is None
         ):
             raise ValidationError("VALIDATION_ARGUMENTS_INVALID")
-        _, predecessor_digest = read_root_predecessor(args.predecessor_record)
+        if args.tools == ["espresso"]:
+            if args.create_stage != "tracer_validated" or args.require_predecessor_stage is not None:
+                raise ValidationError("VALIDATION_ARGUMENTS_INVALID")
+            _, predecessor_digest = read_root_predecessor(args.predecessor_record)
+            predecessor_state = ROOT_PREDECESSOR_STATE
+            predecessor_diagnostic = ROOT_PREDECESSOR_DIAGNOSTIC
+        elif args.tools == ["eqntott", "must", "espresso"]:
+            if args.create_stage != "all_tools_validated_cache_unpublished" or args.require_predecessor_stage != "tracer_validated":
+                raise ValidationError("VALIDATION_ARGUMENTS_INVALID")
+            predecessor, predecessor_digest = read_successor_predecessor(args.predecessor_record, args.require_predecessor_stage)
+            predecessor_state = predecessor["state"]
+            predecessor_diagnostic = predecessor.get("diagnostic")
+        else:
+            raise ValidationError("VALIDATION_ARGUMENTS_INVALID")
         original_diagnostic_digest = read_original_diagnostic(args.original_diagnostic)
         if args.record.exists() or args.record.is_symlink():
             raise ValidationError("RECORD_EXISTS")
@@ -352,12 +420,13 @@ def main(argv: list[str] | None = None) -> int:
             "non_authoritative": True,
             "oracle_runs": oracle_results,
             "oracle_sha256": _sha256(args.oracle),
+            "contract_sha256": _sha256(args.contract),
             "original_diagnostic_path": args.original_diagnostic.as_posix(),
             "original_diagnostic_sha256": original_diagnostic_digest,
-            "predecessor_diagnostic": ROOT_PREDECESSOR_DIAGNOSTIC,
+            "predecessor_diagnostic": predecessor_diagnostic,
             "predecessor_record_path": args.predecessor_record.as_posix(),
             "predecessor_record_sha256": predecessor_digest,
-            "predecessor_state": ROOT_PREDECESSOR_STATE,
+            "predecessor_state": predecessor_state,
             "regression": "not_run",
             "state": state,
         }

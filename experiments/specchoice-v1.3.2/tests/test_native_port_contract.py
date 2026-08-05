@@ -86,6 +86,20 @@ class NativePortContractTests(unittest.TestCase):
             with self.assertRaisesRegex(native_port_validate.ValidationError, "RECORD_EXISTS"):
                 native_port_validate.create_record(record, payload)
 
+    def test_successor_admits_the_exact_required_predecessor_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            previous = Path.cwd()
+            try:
+                os.chdir(directory)
+                record = Path("attempt-02.json")
+                native_port_validate.create_record(record, {"state": "tracer_validated", "non_authoritative": True})
+                _, digest = native_port_validate.read_successor_predecessor(record, "tracer_validated")
+                self.assertEqual(hashlib.sha256(record.read_bytes()).hexdigest(), digest)
+                with self.assertRaisesRegex(native_port_validate.ValidationError, "PREDECESSOR_STATE_MISMATCH"):
+                    native_port_validate.read_successor_predecessor(record, "all_tools_validated_cache_unpublished")
+            finally:
+                os.chdir(previous)
+
     def test_oracles_use_fixed_native_guard_and_repeat_candidates(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -120,6 +134,46 @@ class NativePortContractTests(unittest.TestCase):
             with self.assertRaisesRegex(native_port_validate.ValidationError, "ORACLE_OUTPUT_MISMATCH"):
                 native_port_validate.validate_oracles(root, oracle, ["espresso"], repetitions=2, runner=lambda argv, **_: subprocess.CompletedProcess(argv, 0, b"", b""))
 
+    def test_oracle_supports_committed_input_and_output_files(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            staged = root / "staged"
+            staged.mkdir()
+            for build in (0, 1):
+                (staged / f"must-{build}").write_bytes(b"candidate")
+            oracle = {
+                "cases": [
+                    {
+                        "tool": "must",
+                        "argv": ["-o", "__OUTPUT__", "__INPUT__"],
+                        "input_files": {"__INPUT__": "Y2YgMSAxCjEgMAo="},
+                        "output_files": {"__OUTPUT__": "bXVzLXJlc3VsdAo="},
+                        "stdin_base64": "",
+                        "returncode": 0,
+                        "stdout_base64": "",
+                        "stderr_base64": "",
+                    },
+                    {
+                        "tool": "must",
+                        "argv": ["-o", "__OUTPUT__", "__INPUT__"],
+                        "input_files": {"__INPUT__": "Y2YgMSAxCjEgMAo="},
+                        "output_files": {"__OUTPUT__": "bXVzLXJlc3VsdAo="},
+                        "stdin_base64": "",
+                        "returncode": 0,
+                        "stdout_base64": "",
+                        "stderr_base64": "",
+                    },
+                ]
+            }
+
+            def runner(argv: list[str], **_: object) -> subprocess.CompletedProcess[bytes]:
+                Path(argv[-2]).write_bytes(b"mus-result\n")
+                self.assertTrue(Path(argv[-1]).is_file())
+                return subprocess.CompletedProcess(argv, 0, b"", b"")
+
+            results = native_port_validate.validate_oracles(root, oracle, ["must"], repetitions=2, runner=runner)
+            self.assertEqual(8, len(results))
+
     def test_changed_patch_bytes_and_extra_patch_are_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -134,6 +188,15 @@ class NativePortContractTests(unittest.TestCase):
             (root / "extra.patch").write_text("diff --git a/b b/b\n", encoding="utf-8")
             with self.assertRaisesRegex(native_port_build.ContractError, "UNDECLARED_PATCH"):
                 native_port_build.validate_patch_set(root, [{"path": "allowed.patch", "sha256": digest}])
+
+    def test_patch_manifest_accepts_only_declared_nested_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            patch = root / "mustool" / "0001-port.patch"
+            patch.parent.mkdir()
+            patch.write_text("diff --git a/a b/a\n", encoding="utf-8")
+            digest = hashlib.sha256(patch.read_bytes()).hexdigest()
+            native_port_build.validate_patch_set(root, [{"path": "mustool/0001-port.patch", "sha256": digest}])
 
     def test_staged_candidate_preserves_execute_permission(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

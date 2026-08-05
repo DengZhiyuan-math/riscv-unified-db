@@ -1,0 +1,354 @@
+diff --git a/src/bnode.c b/src/bnode.c
+index 5b33d2fc3cdf37ccc4b5ad72aaeeef5850aac03b..5f1c3dea70bb79be30350094d7d1d5a093e3cadf 100644
+--- a/src/bnode.c
++++ b/src/bnode.c
+@@ -28,7 +28,7 @@
+ #define CHUNK 1024
+ static BNODE *freePtr = 0;
+ 
+-static
++static void
+ get_free ()
+ {
+ 	register BNODE *bnodes;
+diff --git a/src/cover.c b/src/cover.c
+index 07dff73f3c4b57e2813da90d9d6c7a74ec1d096e..b1f5f4c872f653e3445e931eee8886776d6911ff 100644
+--- a/src/cover.c
++++ b/src/cover.c
+@@ -10,8 +10,9 @@
+ #include <stdio.h>
+ 
+ extern int ninputs, noutputs;
++int cmpv (BIT *x, BIT *y, int n);
+ 
+-cover (pts, npts)
++void cover (pts, npts)
+ PTERM *pts[];
+ int npts;
+ /*
+@@ -22,7 +23,7 @@ int npts;
+ 	PTERM *extant();
+ 	int i, cmppth();
+ 
+-	qsort (pts, npts, sizeof (PTERM *), cmppth);
++	qsort (pts, npts, sizeof (PTERM *), (int (*)(const void *, const void *))cmppth);
+ 	for (i = 0; i < npts; i++) {
+ 		if (pts[i]->cv)
+ 			continue;
+diff --git a/src/merge.c b/src/merge.c
+index eef95b6822d51a4137cdbb0a31cca5559345e607..62f9ad341a0c080f4aaad6fad673621f3b993890 100644
+--- a/src/merge.c
++++ b/src/merge.c
+@@ -17,7 +17,7 @@ extern char *ego;
+ 
+ #include "hdr.h"
+ 
+-find_index (pts, npts, x, start, finish)
++void find_index (pts, npts, x, start, finish)
+ PTERM *pts[];
+ int npts, x, *start, *finish;
+ /*
+@@ -139,7 +139,7 @@ int npts;
+ 	fprintf (stderr, "merge: qsort ...");
+ #endif
+ 	/* sort pts by ascending index (number of 1's)*/
+-	qsort (pts, npts, sizeof (PTERM *), cmpptx);
++	qsort (pts, npts, sizeof (PTERM *), (int (*)(const void *, const void *))cmpptx);
+ 
+ #ifdef DEBUG
+ 	fprintf (stderr, " done. merge npts = %d ...", npts);
+diff --git a/src/nt.c b/src/nt.c
+index 756dc782e54ea168050bef051923b8634dd2e294..7ab114285d607efcee19e27943265ce72ab10c6c 100644
+--- a/src/nt.c
++++ b/src/nt.c
+@@ -25,7 +25,7 @@ extern int f_flag, s_flag;
+  * initialize name table
+  */
+ 
+-nt_init ()
++void nt_init ()
+ {
+ 	register struct Nt *p = nts;
+ 	register int i = NTSIZE;
+diff --git a/src/preprocess.c b/src/preprocess.c
+index 6a1ef1a7aeac013b56ffa19f1415bb29359e24b0..efe760c862aa2062cfcc0ff11ba0d925cadfdb3b 100644
+--- a/src/preprocess.c
++++ b/src/preprocess.c
+@@ -7,12 +7,14 @@
+  */
+ 
+ #include <stdlib.h>
++#include <sys/wait.h>
++#include <unistd.h>
+ 
+ /*
+  * setup process's standard input to read from a succession
+  * of C preprocessor invocations, one for each source file.
+  */
+-#define CPREPROCESSOR "/lib/cpp"
++#define CPREPROCESSOR "/usr/bin/clang"
+ 
+ extern char *Argv[], *files[];
+ extern int Argc, nfiles;
+@@ -54,16 +56,20 @@ preprocess()
+ 	 * Argv[0] = CPROPRECESSOR : C preprocessor path name
+ 	 * Argv[1] through Argv[Argc-1] = -D, -I, -U options taken
+ 	 *	from the command line by procargs.
+-	 * Argv[Argc] = one of the "nfiles" file names in "files"
++	 * Argv[Argc] through Argv[Argc+2] select preprocessing in C mode.
++	 * Argv[Argc+3] = one of the "nfiles" file names in "files"
+ 	 *	taken from the command line by procargs.
+-	 * Argv[Argc+1] = (null) : marks end of argument list
++	 * Argv[Argc+4] = (null) : marks end of argument list
+ 	 */
+ 
+ 	Argv[0] = CPREPROCESSOR;
+-	Argv[Argc+1] = (char *) 0;
++	Argv[Argc] = "-E";
++	Argv[Argc+1] = "-x";
++	Argv[Argc+2] = "c";
++	Argv[Argc+4] = (char *) 0;
+ 
+ 	for (i = 0; i < nfiles; i++) {
+-		Argv[Argc] = files[i];
++		Argv[Argc+3] = files[i];
+ 		if (fork())
+ 			wait ((int *)0);
+ 		else	{
+diff --git a/src/prexpr.c b/src/prexpr.c
+index 2abdb280ba5b1eebd9e474df6cfae47570fe4462..05e3859b9e3f17fe5b995e243480594f05ef743f 100644
+--- a/src/prexpr.c
++++ b/src/prexpr.c
+@@ -9,8 +9,10 @@
+ #include <stdio.h>
+ #include "x.h"
+ 
+-prexpr (exp)
+-BNODE *exp;
++void prnode(int num, int kind);
++int new_num(void);
++
++void prexpr (BNODE *exp)
+ {
+ 	extern struct Nt nts[];
+ 	extern struct Nt *inorder[];
+@@ -57,8 +59,7 @@ BNODE *exp;
+ 	return;
+ }
+ 
+-prlexpr (exp)
+-BNODE *exp;
++void prlexpr (BNODE *exp)
+ {
+ 	extern struct Nt nts[];
+ 	extern struct Nt *inorder[];
+@@ -106,8 +107,7 @@ BNODE *exp;
+ 	return;
+ }
+ 
+-prgexpr (exp, node, kind)
+-BNODE *exp;
++void prgexpr (BNODE *exp, int node, int kind)
+ {
+ 	extern struct Nt nts[];
+ 	extern struct Nt *inorder[], *outorder[];
+@@ -191,7 +191,7 @@ BNODE *exp;
+ 	return;
+ }
+ 
+-prnode( num, kind )
++void prnode(int num, int kind)
+ {
+   extern struct Nt *inorder[], *outorder[];
+ 	switch( kind ) {
+@@ -224,6 +224,6 @@ prnode( num, kind )
+ 
+ static int c_node = MIN_GNODE;
+ 
+-new_num() {
++int new_num(void) {
+ 	return( ++c_node );
+ }
+diff --git a/src/procargs.c b/src/procargs.c
+index 840b7551138b28e300ca3cdf0c36554744738439..6fd6922a8918a3d70c2666e9ad0731303c847cc8 100644
+--- a/src/procargs.c
++++ b/src/procargs.c
+@@ -35,6 +35,8 @@ char *defkeyx ="iolpte";/* default labeled output format control string */
+ char *defkeyf="iopfte";	/* default for -f option */
+ char *defkeyfx="iolpfte";/* default for -f with -l option */
+ 
++void copyprefix(char *sout, char *sin);
++
+ int
+ procargs (argc, argv)
+ int argc;
+@@ -137,14 +139,14 @@ usage:
+ 	return (1);
+ }
+ 
+-copyprefix( sout, sin ) char *sout, *sin; {
++void copyprefix(char *sout, char *sin) {
+ 	while( *sout++ = *sin++ )
+ 		if( *sin == '.' )
+ 			break;
+ 	*sout = 0;
+ }
+ 
+-set_planame( name ) char *name; {
++void set_planame(char *name) {
+ 	int i;
+ 	for( i = 0; name[i] != 0; i++ ) {
+ 		planame[i] = name[i];
+diff --git a/src/pterm.c b/src/pterm.c
+index 809d1c1ed476e90b3c8523ad61db157163f771fa..33897130f568c2828b5da0ac26ad8033cf4280f8 100644
+--- a/src/pterm.c
++++ b/src/pterm.c
+@@ -32,7 +32,7 @@
+ static PTERM *freePtr = 0;
+ extern int ninputs, noutputs;
+ 
+-static
++static void
+ get_free ()
+ {
+ 	register PTERM *pterms;
+diff --git a/src/pterm_ops.c b/src/pterm_ops.c
+index b0912a5de307427a761d9e50bfcde27f61953b3d..bcd468627955a56539f704200fb6e395b3daa54f 100644
+--- a/src/pterm_ops.c
++++ b/src/pterm_ops.c
+@@ -171,7 +171,7 @@ PTERM *find_pterm (PTERM *pt, PTERM *pts[], int npts)
+ 	return (NIL_PTERM);
+ }
+ 
+-orpt (pt1, pt2)
++void orpt (pt1, pt2)
+ PTERM *pt1, *pt2;
+ /*
+  * My job is to output BIT-wise "or" the ptor arrays of PTERMS
+diff --git a/src/putpla.c b/src/putpla.c
+index a015ffd948022098713880c9375eb89cd9ed224a..a991d1b9fcb181580e9cc3d77a640760b86c3355 100644
+--- a/src/putpla.c
++++ b/src/putpla.c
+@@ -13,7 +13,7 @@ extern int ninputs, noutputs;
+ extern int f_flag;
+ extern struct Nt nts[], *inorder[], *outorder[];
+ 
+-putpla (pts, npts)
++void putpla (pts, npts)
+ PTERM *pts[];
+ int npts;
+ /*
+@@ -31,7 +31,7 @@ int npts;
+ 	return;
+ }
+ 
+-putpt (pt)
++void putpt (pt)
+ register PTERM *pt;
+ {
+ 	register int j;
+@@ -56,7 +56,7 @@ register PTERM *pt;
+ 	return;
+ }
+ 
+-putrpla (pts, npts)
++void putrpla (pts, npts)
+ PTERM *pts[];
+ int npts;
+ /*
+@@ -112,7 +112,7 @@ int npts;
+ 	return;
+ }
+ 
+-putSpla (pts, npts)
++void putSpla (pts, npts)
+ PTERM *pts[];
+ int npts;
+ /*
+diff --git a/src/read_ones.c b/src/read_ones.c
+index f969bb13ce49eefb1fa20695f4ae90a0d2a02e47..4995ab35cbb68cb6f9d0d660591ac402c47fe0a7 100644
+--- a/src/read_ones.c
++++ b/src/read_ones.c
+@@ -109,7 +109,7 @@ int o;
+ 	}
+ }
+ 
+-contradiction (exp, o)
++void contradiction (exp, o)
+ BNODE *exp;
+ int o;
+ /*
+diff --git a/src/x.h b/src/x.h
+index 824a57a5ad46b2d088ccad70264b44ccd7c0c4d0..d91737f2abf6e6946b1d5d92864221d0d183be5b 100644
+--- a/src/x.h
++++ b/src/x.h
+@@ -10,6 +10,7 @@
+ #define __X_H
+ 
+ #include <stdlib.h>
++#include <string.h>
+ 
+ #define MAXSTR 512
+ 
+@@ -72,5 +73,31 @@ typedef struct Btreenode {
+ 
+ BNODE *new_bnode(int value, BNODE *left, BNODE *right);
+ void free_bnode(BNODE *bnode);
++void orpt(PTERM *pt1, PTERM *pt2);
++PTERM *copy_pterm(PTERM *pterm);
++void yyerror(char *yyerrmsg);
++void putpla(PTERM *pts[], int npts);
++void putpt(PTERM *pt);
++void putrpla(PTERM *pts[], int npts);
++void putSpla(PTERM *pts[], int npts);
++void prexpr(BNODE *exp);
++int duple(PTERM *pts[], int npts);
++int rmcvd(PTERM *pts[], int npts);
++void cover(PTERM *pts[], int npts);
++int procargs(int argc, char *argv[]);
++int preprocess(void);
++void nt_init(void);
++int yyparse(void);
++int grind(PTERM *pts[], int npts);
++void prgexpr(BNODE *exp, int node, int kind);
++void prlexpr(BNODE *exp);
++void version(void);
++int substitute(BNODE *exp, BNODE **new_exp);
++int ptindex(BIT *inv, int n);
++int reduce(PTERM *pts[], int npts);
++int yylex(void);
++int nt_output(char *name);
++int nt_input(char *name);
++void set_planame(char *name);
+ 
+ #endif
+diff --git a/src/yystuff.c b/src/yystuff.c
+index 0feba354cb1b8ca2263986497a5e1897b2182356..e6c2f512c2b68307f916dd618d7b0912a3fb1da1 100644
+--- a/src/yystuff.c
++++ b/src/yystuff.c
+@@ -11,6 +11,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <unistd.h>
+ #include <ctype.h>
+ #include "x.h"
+ #include "y.tab.h"
+@@ -50,7 +51,7 @@ yygetc()
+ 		else	return ((int) yyinbuf[yycharno]);
+ }
+ 
+-static 
++static void
+ yyungetc (yyc)
+ int yyc;
+ {
+@@ -65,7 +66,7 @@ int yyc;
+ 	return;
+ }
+ 
+-yyerror (yyerrmsg)
++void yyerror (yyerrmsg)
+ char *yyerrmsg;
+ {
+ 	register int yyp, yyq, yyr;

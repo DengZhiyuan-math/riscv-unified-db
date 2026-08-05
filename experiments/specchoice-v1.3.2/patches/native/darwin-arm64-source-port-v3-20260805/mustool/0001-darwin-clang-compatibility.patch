@@ -1,0 +1,290 @@
+diff --git a/Makefile b/Makefile
+index c645910f7ff27d702c630edcd80a491375edf27e..1da4075a7e34d2788ef6756d08f61d059a027c20 100644
+--- a/Makefile
++++ b/Makefile
+@@ -5,7 +5,6 @@ MSAT	= libr
+ 
+ LIBD 	= -L/usr/lib -L/usr/local/lib
+ LIBS 	= -lz
+-LIBS	+= -lstdc++fs
+ USR 	= /usr/include
+ INC 	= -I $(MCSMUS) -I $(MINISAT) -I $(USR) -I /usr/local/include -I $(DIR) -I $(MCSMUS) 
+ 
+@@ -32,7 +31,7 @@ USELTL = NO
+ USEMCSMUS = YES
+ 
+ CXX	= g++
+-CFLAGS 	= -w -std=c++17 -g
++CFLAGS 	= -std=c++17 -g
+ CFLAGS	+= -O3
+ CFLAGS	+= -D NDEBUG
+ 
+diff --git a/core/main.cpp b/core/main.cpp
+index 1259c706016d3f951f772b7b095a1b9e3955b623..911183de39698a022034d6bc5bb0e9200ae72702 100644
+--- a/core/main.cpp
++++ b/core/main.cpp
+@@ -42,10 +42,13 @@ int main(int argc, char *argv[]){
+ 		TCLAP::SwitchArg criticalsRotation("","criticals-rotation","Available only in the SAT domain and used only if the flag -g is not set. Allows to find additional critical constraints based on the already found ones. Use this flag to turn the feature on.", cmd, false);
+ 
+ 		TCLAP::UnlabeledValueArg<string>  input( "input_file", "Input file, either .cnf, .smt2, or .ltl. See the ./examples/.", true, "", "input_file"  );
+-		cmd.add(input);
+-		cmd.parse(argc, argv);
+-
+-		//clear the output file
++		cmd.add(input);
++		cmd.parse(argc, argv);
++		if (!verbose.getValue()) {
++			std::cout.setstate(std::ios_base::failbit);
++		}
++
++		//clear the output file
+ 		if(output.getValue() != ""){
+ 			std::ofstream ofs;
+ 			ofs.open(output.getValue(), std::ofstream::out | std::ofstream::trunc);
+diff --git a/custom_minisat/CustomIntTypes.h b/custom_minisat/CustomIntTypes.h
+new file mode 100644
+index 0000000000000000000000000000000000000000..183ce6d3bf21fe65ce11b643e4efe09ee8a8de4b
+--- /dev/null
++++ b/custom_minisat/CustomIntTypes.h
+@@ -0,0 +1,42 @@
++/**************************************************************************************[IntTypes.h]
++Copyright (c) 2009-2010, Niklas Sorensson
++
++Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
++associated documentation files (the "Software"), to deal in the Software without restriction,
++including without limitation the rights to use, copy, modify, merge, publish, distribute,
++sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all copies or
++substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
++NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
++DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
++OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
++**************************************************************************************************/
++
++#ifndef CustomMinisat_IntTypes_h
++#define CustomMinisat_IntTypes_h
++
++#ifdef __sun
++    // Not sure if there are newer versions that support C99 headers. The
++    // needed features are implemented in the headers below though:
++
++#   include <sys/int_types.h>
++#   include <sys/int_fmtio.h>
++#   include <sys/int_limits.h>
++
++#else
++
++#   include <stdint.h>
++#   include <inttypes.h>
++
++#endif
++
++#include <limits.h>
++
++//=================================================================================================
++
++#endif
+diff --git a/custom_minisat/IntTypes.h b/custom_minisat/IntTypes.h
+deleted file mode 100644
+index 183ce6d3bf21fe65ce11b643e4efe09ee8a8de4b..0000000000000000000000000000000000000000
+--- a/custom_minisat/IntTypes.h
++++ /dev/null
+@@ -1,42 +0,0 @@
+-/**************************************************************************************[IntTypes.h]
+-Copyright (c) 2009-2010, Niklas Sorensson
+-
+-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+-associated documentation files (the "Software"), to deal in the Software without restriction,
+-including without limitation the rights to use, copy, modify, merge, publish, distribute,
+-sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+-furnished to do so, subject to the following conditions:
+-
+-The above copyright notice and this permission notice shall be included in all copies or
+-substantial portions of the Software.
+-
+-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+-NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+-OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+-**************************************************************************************************/
+-
+-#ifndef CustomMinisat_IntTypes_h
+-#define CustomMinisat_IntTypes_h
+-
+-#ifdef __sun
+-    // Not sure if there are newer versions that support C99 headers. The
+-    // needed features are implemented in the headers below though:
+-
+-#   include <sys/int_types.h>
+-#   include <sys/int_fmtio.h>
+-#   include <sys/int_limits.h>
+-
+-#else
+-
+-#   include <stdint.h>
+-#   include <inttypes.h>
+-
+-#endif
+-
+-#include <limits.h>
+-
+-//=================================================================================================
+-
+-#endif
+diff --git a/custom_minisat/Map.h b/custom_minisat/Map.h
+index f840ac9df6af1361f4370a79f71e39d2eea33bc2..441218dc9f9e4af85d7525781c88c770d5b7ffa0 100644
+--- a/custom_minisat/Map.h
++++ b/custom_minisat/Map.h
+@@ -20,7 +20,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
+ #ifndef CustomMinisat_Map_h
+ #define CustomMinisat_Map_h
+ 
+-#include "IntTypes.h"
++#include "CustomIntTypes.h"
+ #include "Vec.h"
+ 
+ namespace CustomMinisat {
+diff --git a/custom_minisat/Options.h b/custom_minisat/Options.h
+index 62d6ad09d64f2e1aa1a3ab58546c7de9b703e8a7..2d16482558fa7612947ef7e90ca230f01ccf1b16 100644
+--- a/custom_minisat/Options.h
++++ b/custom_minisat/Options.h
+@@ -25,7 +25,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
+ #include <math.h>
+ #include <string.h>
+ 
+-#include "IntTypes.h"
++#include "CustomIntTypes.h"
+ #include "Vec.h"
+ #include "ParseUtils.h"
+ 
+@@ -282,15 +282,15 @@ class Int64Option : public Option
+         if (range.begin == INT64_MIN)
+             fprintf(stderr, "imin");
+         else
+-            fprintf(stderr, "%4"PRIi64, range.begin);
++            fprintf(stderr, "%4" PRIi64, range.begin);
+ 
+         fprintf(stderr, " .. ");
+         if (range.end == INT64_MAX)
+             fprintf(stderr, "imax");
+         else
+-            fprintf(stderr, "%4"PRIi64, range.end);
++            fprintf(stderr, "%4" PRIi64, range.end);
+ 
+-        fprintf(stderr, "] (default: %"PRIi64")\n", value);
++        fprintf(stderr, "] (default: %" PRIi64 ")\n", value);
+         if (verbose){
+             fprintf(stderr, "\n        %s\n", description);
+             fprintf(stderr, "\n");
+diff --git a/custom_minisat/Solver.cc b/custom_minisat/Solver.cc
+index b48a68cec650579e395f70872f9caba0783e6829..1c5b1856a557937d6ad3f31aceefeb66796d70c1 100644
+--- a/custom_minisat/Solver.cc
++++ b/custom_minisat/Solver.cc
+@@ -995,15 +995,15 @@ void Solver::printStats() const
+ {
+     double cpu_time = cpuTime();
+     double mem_used = memUsedPeak();
+-    printf("restarts              : %"PRIu64"\n", starts);
+-    printf("conflicts             : %-12"PRIu64"   (%.0f /sec)\n", conflicts   , conflicts   /cpu_time);
+-    printf("decisions             : %-12"PRIu64"   (%4.2f %% random) (%.0f /sec)\n", decisions, (float)rnd_decisions*100 / (float)decisions, decisions   /cpu_time);
+-    printf("propagations          : %-12"PRIu64"   (%.0f /sec)\n", propagations, propagations/cpu_time);
+-    printf("conflict literals     : %-12"PRIu64"   (%4.2f %% deleted)\n", tot_literals, (max_literals - tot_literals)*100 / (double)max_literals);
++    printf("restarts              : %" PRIu64 "\n", starts);
++    printf("conflicts             : %-12" PRIu64 "   (%.0f /sec)\n", conflicts   , conflicts   /cpu_time);
++    printf("decisions             : %-12" PRIu64 "   (%4.2f %% random) (%.0f /sec)\n", decisions, (float)rnd_decisions*100 / (float)decisions, decisions   /cpu_time);
++    printf("propagations          : %-12" PRIu64 "   (%.0f /sec)\n", propagations, propagations/cpu_time);
++    printf("conflict literals     : %-12" PRIu64 "   (%4.2f %% deleted)\n", tot_literals, (max_literals - tot_literals)*100 / (double)max_literals);
+     if (mem_used != 0) printf("Memory used           : %.2f MB\n", mem_used);
+     printf("CPU time              : %g s\n", cpu_time);
+-    printf("clauses               : %"PRIu64"\n", num_clauses);
+-    printf("variables             : %"PRIu64"\n", next_var);
++    printf("clauses               : %" PRIu64 "\n", num_clauses);
++    printf("variables             : %" PRIu64 "\n", next_var);
+ }
+ 
+ 
+diff --git a/custom_minisat/SolverTypes.h b/custom_minisat/SolverTypes.h
+index 3baf50dd81c4af39ec8d5ef570ec7cc1e9f128cc..5a5b8485fcb8ed8d30c9aa42df6a058bb53023d0 100644
+--- a/custom_minisat/SolverTypes.h
++++ b/custom_minisat/SolverTypes.h
+@@ -24,7 +24,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
+ 
+ #include <assert.h>
+ 
+-#include "IntTypes.h"
++#include "CustomIntTypes.h"
+ #include "Alg.h"
+ #include "Vec.h"
+ #include "IntMap.h"
+diff --git a/custom_minisat/System.h b/custom_minisat/System.h
+index 2b8f0f8062768413d6ced9b8472545f0320e73ff..67a1738ab06954086b807f9aa070620855b90bfb 100644
+--- a/custom_minisat/System.h
++++ b/custom_minisat/System.h
+@@ -25,7 +25,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
+ #include <fpu_control.h>
+ #endif
+ 
+-#include "IntTypes.h"
++#include "CustomIntTypes.h"
+ 
+ //-------------------------------------------------------------------------------------------------
+ 
+diff --git a/custom_minisat/Vec.h b/custom_minisat/Vec.h
+index a2c5aef2875a4d58150b568b4e6a00b164585045..22dda21a55e3f7bfe1661f8d19e044a0e4472b64 100644
+--- a/custom_minisat/Vec.h
++++ b/custom_minisat/Vec.h
+@@ -25,7 +25,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
+ #include <limits>
+ #include <new>
+ 
+-#include "IntTypes.h"
++#include "CustomIntTypes.h"
+ #include "XAlloc.h"
+ 
+ namespace CustomMinisat {
+diff --git a/mcsmus/minisat/utils/System.cc b/mcsmus/minisat/utils/System.cc
+index f8a34f302600a1b0920b4d3c53b5c764c8c015bc..f4a8ce062ef46be7901afccdd9bcea041c837760 100644
+--- a/mcsmus/minisat/utils/System.cc
++++ b/mcsmus/minisat/utils/System.cc
+@@ -77,7 +77,7 @@ double Minisat::memUsed() {
+     struct rusage ru;
+     getrusage(RUSAGE_SELF, &ru);
+     return (double)ru.ru_maxrss / 1024; }
+-double Minisat::memUsedPeak() { return memUsed(); }
++double Minisat::memUsedPeak(bool) { return memUsed(); }
+ 
+ 
+ #elif defined(__APPLE__)
+@@ -87,7 +87,7 @@ double Minisat::memUsed() {
+     malloc_statistics_t t;
+     malloc_zone_statistics(NULL, &t);
+     return (double)t.max_size_in_use / (1024*1024); }
+-double Minisat::memUsedPeak() { return memUsed(); }
++double Minisat::memUsedPeak(bool) { return memUsed(); }
+ 
+ #else
+ double Minisat::memUsed()     { return 0; }
+diff --git a/satSolvers/SatSolver.h b/satSolvers/SatSolver.h
+index 0d02ecef5ad66c42d708f0fe6b0e9b43d8e61afe..fb1b29987d578bba9138632112dd07b8e3bb6251 100644
+--- a/satSolvers/SatSolver.h
++++ b/satSolvers/SatSolver.h
+@@ -19,7 +19,7 @@ public:
+ 	int exported_muses;
+ 
+ 	SatSolver(std::string filename): shrink_alg("default"), checks(0), shrinks(0), grows(0), exported_muses(0){}
+-	~SatSolver(){}
++	virtual ~SatSolver(){}
+ 	virtual std::string toString(std::vector<bool> &mus) = 0;
+ 	virtual bool solve(std::vector<bool> &f, bool core = false, bool grow = false) = 0;
+ 	virtual std::vector<bool> shrink(std::vector<bool> &f, std::vector<bool> crits = std::vector<bool>());
+@@ -29,4 +29,3 @@ public:
+ 
+ 
+ #endif
+-

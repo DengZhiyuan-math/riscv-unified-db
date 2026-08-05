@@ -21,6 +21,7 @@ class ContractError(ValueError):
 
 
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
+SHA256 = re.compile(r"^[0-9a-f]{64}$")
 PATCH_SUFFIX = ".patch"
 FORBIDDEN_TOKENS = {"docker", "brew", "pip", "gem", "npm", "install", "strip", "codesign"}
 
@@ -77,6 +78,9 @@ def validate_contract(contract: dict[str, Any], *, tracer_tool: str | None) -> N
         patches = tool.get("patches")
         if not isinstance(patches, list):
             raise ContractError("PATCH_LIST_INVALID")
+        for patch in patches:
+            if not isinstance(patch, dict) or not isinstance(patch.get("path"), str) or not isinstance(patch.get("sha256"), str) or not SHA256.fullmatch(patch["sha256"]):
+                raise ContractError("PATCH_MANIFEST_INVALID")
         if name == "espresso" and patches:
             raise ContractError("ESPRESSO_PATCH_FORBIDDEN")
         if tracer_tool is None and name != "espresso" and not patches:
@@ -90,13 +94,16 @@ def validate_patch_set(root: Path, manifest: list[dict[str, str]]) -> None:
         expected = item.get("sha256")
         if not isinstance(relative, str) or not isinstance(expected, str):
             raise ContractError("PATCH_MANIFEST_INVALID")
-        path = root / relative
-        if path.parent != root or path.suffix != PATCH_SUFFIX or path.is_symlink() or not path.is_file():
+        relative_path = Path(relative)
+        if relative_path.is_absolute() or ".." in relative_path.parts:
+            raise ContractError("PATCH_PATH_INVALID")
+        path = root / relative_path
+        if path.suffix != PATCH_SUFFIX or path.is_symlink() or not path.is_file():
             raise ContractError("PATCH_PATH_INVALID")
         if _sha256(path) != expected:
             raise ContractError("PATCH_SHA256_MISMATCH")
         declared.add(path)
-    actual = {path for path in root.iterdir() if path.is_file() and path.suffix == PATCH_SUFFIX}
+    actual = {path for path in root.rglob(f"*{PATCH_SUFFIX}") if path.is_file() or path.is_symlink()}
     if actual != declared:
         raise ContractError("UNDECLARED_PATCH")
 
@@ -115,15 +122,29 @@ def _clean_git_checkout(tool: dict[str, Any], root: Path) -> Path:
         result = _run(argv, cwd=source, environment=os.environ.copy())
         if result.returncode:
             raise ContractError("SOURCE_IDENTITY_FAILED")
-        if argv[-1] == "--porcelain" and result.stdout:
+        if (argv[-1] == "--porcelain" or argv[-1] == "status") and result.stdout:
             raise ContractError("SOURCE_DIRTY")
     return source
 
 
-def _build_one(tool: dict[str, Any], root: Path, number: int) -> Path:
+def _apply_patches(work: Path, patch_root: Path, patches: list[dict[str, str]]) -> None:
+    for patch in patches:
+        path = patch_root / patch["path"]
+        for argv in (["/usr/bin/git", "apply", "--check", "--whitespace=error", str(path)], ["/usr/bin/git", "apply", "--whitespace=error", str(path)]):
+            result = _run(argv, cwd=work, environment=os.environ.copy())
+            if result.returncode:
+                raise ContractError("PATCH_APPLICATION_FAILED")
+
+
+def _build_one(tool: dict[str, Any], root: Path, number: int, patch_root: Path | None) -> Path:
     pristine = _clean_git_checkout(tool, root / f"build-{number}")
     work = root / f"build-{number}" / "work" / tool["name"]
     shutil.copytree(pristine, work, symlinks=True)
+    patches = tool["patches"]
+    if patches:
+        if patch_root is None:
+            raise ContractError("PATCH_ROOT_MISSING")
+        _apply_patches(work, patch_root, patches)
     staged = root / "staged" / f"{tool['name']}-{number}"
     staged.parent.mkdir(parents=True, exist_ok=True)
     environment = {key: os.environ[key] for key in ("PATH", "LC_ALL", "CC", "CXX") if key in os.environ}
@@ -151,15 +172,21 @@ def stage_executable(source: Path, destination: Path) -> None:
     destination.chmod(stat.S_IMODE(mode))
 
 
-def build(contract: dict[str, Any], root: Path, tools: list[str], clean_builds: int) -> None:
+def build(contract: dict[str, Any], root: Path, tools: list[str], clean_builds: int, patch_root: Path | None = None) -> None:
     validate_contract(contract, tracer_tool=tools[0] if len(tools) == 1 else None)
     if clean_builds != 2:
         raise ContractError("CLEAN_BUILD_COUNT_INVALID")
+    patches = [patch for name in tools for patch in contract["tools"][name]["patches"]]
+    if patches:
+        if patch_root is None:
+            raise ContractError("PATCH_ROOT_MISSING")
+        patch_root = patch_root.resolve()
+        validate_patch_set(patch_root, patches)
     for name in tools:
         tool = dict(contract["tools"][name])
         tool["name"] = name
         for number in range(clean_builds):
-            _build_one(tool, root, number)
+            _build_one(tool, root, number, patch_root)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -170,6 +197,7 @@ def main(argv: list[str] | None = None) -> int:
         item.add_argument("--contract", type=Path, required=True)
         item.add_argument("--oracle", type=Path, required=True)
         item.add_argument("--operational-root", type=Path, required=True)
+        item.add_argument("--patch-root", type=Path)
         item.add_argument("--tool")
         item.add_argument("--clean-builds", type=int, required=True)
     args = parser.parse_args(argv)
@@ -178,7 +206,7 @@ def main(argv: list[str] | None = None) -> int:
         tools = [args.tool] if args.command == "tracer" else ["eqntott", "must", "espresso"]
         if not args.oracle.is_file():
             raise ContractError("ORACLE_MISSING")
-        build(contract, args.operational_root, tools, args.clean_builds)
+        build(contract, args.operational_root, tools, args.clean_builds, args.patch_root)
     except ContractError as error:
         print(str(error), file=sys.stderr)
         return 2
