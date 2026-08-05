@@ -308,7 +308,8 @@ Plans:
 - [x] 05-04-PLAN.md — implement and freeze the separate successor contract, then obtain Gate A approval.
 - [x] 05-05-PLAN.md — rehearse the exact command, obtain Gate B confirmation, and publish only the successor namespace.
 - `05-06-FAILED-CLOSED.md` / `05-06-CANCELLATION.md` — partial read-only audit and harness history preserved; native construction preflight failed closed before either full regression, no summary exists, and the plan is not completed.
-- [ ] 05-07-PLAN.md — correct only the validation-only native connection-use preflight, repeat the read-only exact-resume audit, and run two fixed native-confined full regressions.
+- `05-07-FAILED-CLOSED.md` / `05-07-CANCELLATION.md` — partial native-guard correction preserved; the first guarded child stopped at Bundler platform admission before the regression suite, zero of two full regressions completed, and no summary exists.
+- [ ] 05-08-PLAN.md — add only the missing `arm64-darwin-23` lockfile platform, adopt the exact 05-07 validation bytes unchanged, and resume two fixed native-confined full regressions.
 
 **Wave 1**
 
@@ -320,6 +321,7 @@ Plans:
 - `05-02-REJECTED.md`: Tasks 1-2 reached the final-closure checkpoint; the human rejected publication because the frozen interface did not expose the required formal command. Task 3 never ran.
 - `05-03-SUPERSEDED.md`: Never executed because its predecessor formal root was never published.
 - `05-06-FAILED-CLOSED.md`: Task 1 produced empty read-only audit commit `d95fb748`; Task 2 added the harness/tests in `46c34c8b`, then stopped at `GUARDED_REGRESS_NETWORK_PROBE_NOT_DENIED` before either full regression. `05-06-CANCELLATION.md` binds this partial history and no `05-06-SUMMARY.md` exists.
+- `05-07-FAILED-CLOSED.md`: native calibration and validation-only work reached the first guarded child, which stopped before the test suite because Bundler 4.0.17 found no `arm64-darwin-23` entry in `Gemfile.lock`. `05-07-CANCELLATION.md` binds the exact partial worktree hashes and blocker; zero of two full regressions completed and no `05-07-SUMMARY.md` exists.
 
 **Wave 2** *(blocked on completed 05-01 and forward-only historical reconciliation)*
 
@@ -331,7 +333,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 05-07: Require the native guard to deny a fixed loopback connection use after socket construction, then repeat the formal zero-write audit and two guarded `./bin/regress --all` release gates without changing evidence or authority.
+- [ ] 05-08: Add exactly `arm64-darwin-23` to the existing lockfile without dependency drift, preserve the corrected native guard bytes, repeat formal zero-write exact-resume, and complete two guarded `./bin/regress --all` release gates without changing evidence or authority.
 
 ### Phase 6: Partition-Aware Ablation and Metamorphic Evaluation
 
