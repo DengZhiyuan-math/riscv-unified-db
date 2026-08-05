@@ -1,0 +1,8 @@
+{
+  "diagnostic_id": "FWD-05-08-PORT-20260805-original-whole-binary-mismatch",
+  "authoritative": false,
+  "left": {"relative_label": "staged/espresso-0", "length": 297208, "sha256": "545a788e0e6dde0dc268d0575649a1335e9c67cd881df584d149cdbb567996c3"},
+  "right": {"relative_label": "staged/espresso-1", "length": 297208, "sha256": "6ee19c6136897c3b9ea8403d89339946eb3fec5cb563e27e67654078affd1485"},
+  "cmp_l": {"argv": ["/usr/bin/cmp", "-l", "LEFT", "RIGHT"], "difference_count": 544, "stdout_sha256": "2f236895ef71c74cd9194eecb140abf7b1fb915c0a19ac8aff6b5d329d564726"},
+  "status": "immutable_failed_diagnostic"
+}

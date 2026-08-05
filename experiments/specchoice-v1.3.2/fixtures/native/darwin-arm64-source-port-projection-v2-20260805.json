@@ -1,0 +1,12 @@
+{
+  "fixture_id": "darwin-arm64-source-port-projection-v2-20260805",
+  "provenance": "repository-reviewed UDB invocation contracts; expectations are committed before candidate validation",
+  "cases": [
+    {"tool": "eqntott", "argv": ["-l"], "stdin_base64": "YSAmIGI=", "returncode": 0, "stdout_base64": "", "stderr_base64": ""},
+    {"tool": "eqntott", "argv": ["-l"], "stdin_base64": "YSB8IGI=", "returncode": 0, "stdout_base64": "", "stderr_base64": ""},
+    {"tool": "must", "argv": ["-o", "__OUTPUT__"], "stdin_base64": "YSAmIGI=", "returncode": 0, "stdout_base64": "", "stderr_base64": "", "output_file_base64": ""},
+    {"tool": "must", "argv": ["-o", "__OUTPUT__"], "stdin_base64": "YSB8IGI=", "returncode": 0, "stdout_base64": "", "stderr_base64": "", "output_file_base64": ""},
+    {"tool": "espresso", "argv": ["-efast"], "stdin_base64": "LmkgMgoubyAxCjAwIDAKMDEgMQouZQo=", "returncode": 0, "stdout_base64": "LmkgMgoubyAxCi5wIDEKMDEgMQouZQo=", "stderr_base64": ""},
+    {"tool": "espresso", "argv": ["-Dsignature"], "stdin_base64": "LmkgMgoubyAxCjAwIDAKMDEgMQouZQo=", "returncode": 0, "stdout_base64": "LmkgMgoubyAxCi5wIDEKMDEgMQouZQo=", "stderr_base64": ""}
+  ]
+}

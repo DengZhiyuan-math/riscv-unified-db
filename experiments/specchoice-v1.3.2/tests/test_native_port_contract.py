@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -55,8 +57,9 @@ class NativePortContractTests(unittest.TestCase):
 
     def test_validator_uses_native_no_network_profile(self) -> None:
         profile = native_port_validate.native_network_deny_profile()
-        self.assertEqual("(version 1)\n(deny default)\n(allow process*)\n(allow file-read*)\n(deny network*)\n", profile)
+        self.assertEqual("(version 1)\n(allow default)\n(deny network*)\n", profile)
         self.assertEqual("/usr/bin/sandbox-exec", str(native_port_validate.SANDBOX_EXEC))
+        self.assertIn("(deny file-write*", native_port_validate.native_oracle_profile())
 
     def test_candidate_cannot_generate_oracle(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -83,6 +86,40 @@ class NativePortContractTests(unittest.TestCase):
             with self.assertRaisesRegex(native_port_validate.ValidationError, "RECORD_EXISTS"):
                 native_port_validate.create_record(record, payload)
 
+    def test_oracles_use_fixed_native_guard_and_repeat_candidates(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            staged = root / "staged"
+            staged.mkdir()
+            for build in (0, 1):
+                (staged / f"espresso-{build}").write_bytes(b"candidate")
+            oracle = {
+                "cases": [
+                    {"tool": "espresso", "argv": ["-efast"], "stdin_base64": "", "returncode": 0, "stdout_base64": "", "stderr_base64": ""},
+                    {"tool": "espresso", "argv": ["-Dsignature"], "stdin_base64": "", "returncode": 0, "stdout_base64": "", "stderr_base64": ""},
+                ]
+            }
+            calls: list[list[str]] = []
+
+            def runner(argv: list[str], **_: object) -> subprocess.CompletedProcess[bytes]:
+                calls.append(argv)
+                return subprocess.CompletedProcess(argv, 0, b"", b"")
+
+            results = native_port_validate.validate_oracles(root, oracle, ["espresso"], repetitions=2, runner=runner)
+            self.assertEqual(8, len(results))
+            self.assertTrue(all(call[:2] == ["/usr/bin/sandbox-exec", "-p"] for call in calls))
+
+    def test_oracle_mismatch_is_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            staged = root / "staged"
+            staged.mkdir()
+            for build in (0, 1):
+                (staged / f"espresso-{build}").write_bytes(b"candidate")
+            oracle = {"cases": [{"tool": "espresso", "argv": ["-efast"], "stdin_base64": "", "returncode": 0, "stdout_base64": "eA==", "stderr_base64": ""}, {"tool": "espresso", "argv": ["-Dsignature"], "stdin_base64": "", "returncode": 0, "stdout_base64": "", "stderr_base64": ""}]}
+            with self.assertRaisesRegex(native_port_validate.ValidationError, "ORACLE_OUTPUT_MISMATCH"):
+                native_port_validate.validate_oracles(root, oracle, ["espresso"], repetitions=2, runner=lambda argv, **_: subprocess.CompletedProcess(argv, 0, b"", b""))
+
     def test_changed_patch_bytes_and_extra_patch_are_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -97,6 +134,16 @@ class NativePortContractTests(unittest.TestCase):
             (root / "extra.patch").write_text("diff --git a/b b/b\n", encoding="utf-8")
             with self.assertRaisesRegex(native_port_build.ContractError, "UNDECLARED_PATCH"):
                 native_port_build.validate_patch_set(root, [{"path": "allowed.patch", "sha256": digest}])
+
+    def test_staged_candidate_preserves_execute_permission(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            destination = root / "destination"
+            source.write_bytes(b"candidate")
+            source.chmod(0o755)
+            native_port_build.stage_executable(source, destination)
+            self.assertTrue(os.access(destination, os.X_OK))
 
 
 if __name__ == "__main__":

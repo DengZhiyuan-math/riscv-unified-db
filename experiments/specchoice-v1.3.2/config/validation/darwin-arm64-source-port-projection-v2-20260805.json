@@ -1,0 +1,34 @@
+{
+  "contract_id": "darwin-arm64-source-port-projection-v2-20260805",
+  "schema_version": 1,
+  "reproducibility_predicate": "named-executable-sections-and-oracle",
+  "environment_allowlist": ["CC", "CXX", "LC_ALL", "PATH"],
+  "identity_argv_templates": [["/usr/bin/file", "--brief", "PATH"], ["/usr/bin/lipo", "-archs", "PATH"], ["/usr/bin/otool", "-L", "PATH"], ["/usr/bin/otool", "-l", "PATH"]],
+  "executable_sections": [["__TEXT", "__text"], ["__TEXT", "__stubs"]],
+  "tools": {
+    "eqntott": {
+      "source_url": "https://github.com/TheProjecter/eqntott.git",
+      "source_commit": "392759e6493a46f1d1ed7d9fb1c7c31197b0f6a8",
+      "cache_version": "eqntott-392759e",
+      "executable": "eqntott",
+      "patches": [{"path": "eqntott/0001-darwin-clang-compatibility.patch", "sha256": "pending-task-02"}],
+      "build_commands": [["./configure", "--prefix=__STAGING__"], ["/usr/bin/make"]]
+    },
+    "must": {
+      "source_url": "https://github.com/jar-ben/mustool.git",
+      "source_commit": "17fa9f9542a9ce05328dfccd1cd410f05f741ab3",
+      "cache_version": "must-17fa9f9",
+      "executable": "must",
+      "patches": [{"path": "mustool/0001-darwin-cstdio-and-memusedpeak-consistency.patch", "sha256": "pending-task-02"}],
+      "build_commands": [["/usr/bin/make", "CXX=/usr/bin/clang++"]]
+    },
+    "espresso": {
+      "source_url": "https://github.com/psksvp/espresso-ab-1.0.git",
+      "source_commit": "18f59c723545f11bcb46d9e38e936531c990e5cf",
+      "cache_version": "espresso-18f59c7",
+      "executable": "espresso",
+      "patches": [],
+      "build_commands": [["./configure", "--prefix=__STAGING__"], ["/usr/bin/make"]]
+    }
+  }
+}
