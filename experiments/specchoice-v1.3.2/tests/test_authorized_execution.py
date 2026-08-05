@@ -240,8 +240,10 @@ class AuthorizedExecutionTests(unittest.TestCase):
             root = self._copy_experiment(directory)
             formal = Path(directory) / "formal"
             formal.mkdir()
+            temporary = Path(directory) / "temporary"
+            temporary.mkdir()
             expected = execute_red_with_attempt_custody_v1(
-                root=root, output_root=Path(directory) / "temporary"
+                root=root, output_root=temporary
             )["frozen_inputs"]
             changed = deepcopy(expected)
             changed["policy_sha256"] = "0" * 64
@@ -271,7 +273,7 @@ class AuthorizedExecutionTests(unittest.TestCase):
             self.assertEqual("completed", result["status"])
             self.assertFalse((root / "runs/red-attempts").exists())
             self.assertFalse((root / "runs/red-successors").exists())
-            self.assertEqual([], result["attempt_chain"]["attempts"])
+            self.assertEqual([], result["prior_attempts"])
 
     def test_occupied_partial_symlink_interrupted_and_concurrent_targets_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

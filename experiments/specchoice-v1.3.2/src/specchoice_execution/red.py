@@ -66,6 +66,21 @@ _OUTPUT_PATHS = (
 )
 _FORBIDDEN_IMPORT_ROOTS = frozenset({"boto3", "http", "importlib", "openai", "requests", "subprocess", "urllib"})
 _FORBIDDEN_CALLS = frozenset({"__import__", "eval", "exec"})
+_ATTEMPT_FILES = (
+    "attempt.json",
+    "frozen-inputs.json",
+    "model-call-ledger.json",
+    "observed-differences.json",
+    "ordered-diagnostics.json",
+    "raw-custody.json",
+    "security-events.json",
+)
+_SUCCESSOR_FILES = (
+    "candidate-closure.json",
+    "observed-differences.json",
+    "readiness.json",
+)
+_EMPTY_LEDGER = {"calls": [], "schema_version": "red-model-call-ledger-v1"}
 
 
 def _is_integer(value: object) -> bool:
@@ -343,6 +358,210 @@ def validate_red_evidence_v1(*, root: Path | None = None, value: object | None =
             if raw != canonical_json_bytes(expected):
                 raise RedExecutionError("RED_EXACT_RESUME_MISMATCH")
     return value
+
+
+def _frozen_inputs_v1(root: Path) -> dict[str, object]:
+    """Capture the closed pre-write authority and execution bytes by relative path."""
+    policy_raw = _load_canonical(root, _POLICY_PATH)[1]
+    policy = validate_red_execution_policy_v1(decode_strict_json(policy_raw))
+    authority = validate_red_authority_v1(root, policy)
+    audit = audit_red_execution_surface_v1(root, policy)
+    inputs: list[dict[str, object]] = []
+    for path in sorted({_POLICY_PATH, *_RAW_EVIDENCE_PATHS, *policy["closure_paths"]}):
+        evidence, raw = read_authoritative_file(root, path)
+        inputs.append({"byte_length": evidence.byte_length, "path": path, "sha256": sha256_bytes(raw)})
+    closure = audit["closure"]
+    return {
+        "authority_sha256": authority["authority_sha256"],
+        "closure_sha256": sha256_bytes(canonical_json_bytes(closure)),
+        "inputs": inputs,
+        "policy_sha256": sha256_bytes(policy_raw),
+        "schema_version": "red-frozen-inputs-v1",
+    }
+
+
+def _attempt_root(root: Path) -> Path:
+    return root / "runs/red-attempts"
+
+
+def _successor_root(root: Path) -> Path:
+    return root / "runs/red-successors"
+
+
+def _closed_files_or_empty(root: Path) -> set[str]:
+    try:
+        return enumerate_authoritative_files(root)
+    except FilesystemPolicyError as error:
+        if str(error) == "AUTHORITATIVE_FILE_MISSING":
+            return set()
+        raise RedExecutionError("RED_ATTEMPT_CHAIN_INVALID") from error
+
+
+def _attempt_directories(files: set[str]) -> list[str]:
+    names = sorted({path.split("/", 1)[0] for path in files})
+    if any(not name.startswith("attempt-") or len(name) != len("attempt-000001") for name in names):
+        raise RedExecutionError("RED_ATTEMPT_CHAIN_INVALID")
+    if names != [f"attempt-{number:06d}" for number in range(1, len(names) + 1)]:
+        raise RedExecutionError("RED_ATTEMPT_CHAIN_INVALID")
+    return names
+
+
+def _read_attempt_chain_v1(attempt_root: Path, frozen_inputs: Mapping[str, object]) -> list[dict[str, object]]:
+    """Reject any incomplete, reordered, changed, or authority-bearing prior failure."""
+    files = _closed_files_or_empty(attempt_root)
+    names = _attempt_directories(files)
+    attempts: list[dict[str, object]] = []
+    for ordinal, name in enumerate(names, start=1):
+        expected = {f"{name}/{file}" for file in _ATTEMPT_FILES}
+        if {path for path in files if path.startswith(f"{name}/")} != expected:
+            raise RedExecutionError("RED_ATTEMPT_CHAIN_INVALID")
+        values = {file: _load_canonical(attempt_root, f"{name}/{file}")[0] for file in _ATTEMPT_FILES}
+        attempt = values["attempt.json"]
+        ledger = values["model-call-ledger.json"]
+        if (
+            not isinstance(attempt, dict)
+            or attempt.get("attempt_id") != name
+            or attempt.get("ordinal") != ordinal
+            or attempt.get("schema_version") != "red-failed-attempt-v1"
+            or attempt.get("status") != "failed"
+            or attempt.get("authoritative") is not False
+            or attempt.get("metrics_emitted") is not False
+            or values["frozen-inputs.json"] != frozen_inputs
+            or ledger != _EMPTY_LEDGER
+        ):
+            raise RedExecutionError("RED_ATTEMPT_CHAIN_INVALID")
+        for field, filename in (
+            ("frozen_inputs_sha256", "frozen-inputs.json"),
+            ("model_call_ledger_sha256", "model-call-ledger.json"),
+            ("security_events_sha256", "security-events.json"),
+            ("ordered_diagnostics_sha256", "ordered-diagnostics.json"),
+            ("raw_custody_sha256", "raw-custody.json"),
+        ):
+            if attempt.get(field) != sha256_bytes(canonical_json_bytes(values[filename])):
+                raise RedExecutionError("RED_ATTEMPT_CHAIN_INVALID")
+        attempts.append(attempt)
+    return attempts
+
+
+def _differences(expected: Mapping[str, object], observed: Mapping[str, object]) -> list[dict[str, object]]:
+    return [
+        {"expected": expected.get(key), "field": key, "observed": observed.get(key)}
+        for key in sorted(set(expected) | set(observed))
+        if expected.get(key) != observed.get(key)
+    ]
+
+
+def _record_failed_attempt_v1(
+    *,
+    root: Path,
+    expected: Mapping[str, object],
+    observed: Mapping[str, object],
+    code: str,
+    stage: str,
+    security_events: list[dict[str, object]],
+) -> dict[str, object]:
+    """Write one complete, append-only, non-authoritative failure package."""
+    attempt_root = _attempt_root(root)
+    prior = _read_attempt_chain_v1(attempt_root, expected)
+    ordinal = len(prior) + 1
+    attempt_id = f"attempt-{ordinal:06d}"
+    differences = {"differences": _differences(expected, observed), "schema_version": "red-observed-differences-v1"}
+    diagnostics = [{"code": code, "stage": stage}]
+    ledger = dict(_EMPTY_LEDGER)
+    raw_custody = {"inputs": observed.get("inputs", []), "schema_version": "red-raw-custody-v1"}
+    payloads: dict[str, object] = {
+        "frozen-inputs.json": dict(expected),
+        "model-call-ledger.json": ledger,
+        "observed-differences.json": differences,
+        "ordered-diagnostics.json": diagnostics,
+        "raw-custody.json": raw_custody,
+        "security-events.json": security_events,
+    }
+    attempt = {
+        "attempt_id": attempt_id,
+        "authoritative": False,
+        "frozen_inputs_sha256": sha256_bytes(canonical_json_bytes(payloads["frozen-inputs.json"])),
+        "metrics_emitted": False,
+        "model_call_ledger_sha256": sha256_bytes(canonical_json_bytes(ledger)),
+        "ordinal": ordinal,
+        "ordered_diagnostics_sha256": sha256_bytes(canonical_json_bytes(diagnostics)),
+        "raw_custody_sha256": sha256_bytes(canonical_json_bytes(raw_custody)),
+        "schema_version": "red-failed-attempt-v1",
+        "security_events_sha256": sha256_bytes(canonical_json_bytes(security_events)),
+        "status": "failed",
+    }
+    payloads["attempt.json"] = attempt
+    try:
+        write_exact_descriptor_files(
+            root,
+            {
+                f"runs/red-attempts/{attempt_id}/{name}": canonical_json_bytes(value)
+                for name, value in payloads.items()
+            },
+        )
+    except (FilesystemPolicyError, OSError) as error:
+        raise RedExecutionError("RED_ATTEMPT_PUBLICATION_FAILED") from error
+    _read_attempt_chain_v1(attempt_root, expected)
+    return {**attempt, "model_call_ledger": ledger, "security_events": security_events}
+
+
+def _record_successor_v1(
+    *, root: Path, expected: Mapping[str, object], observed: Mapping[str, object]
+) -> None:
+    """Persist only a decision-free candidate; no successor authority exists here."""
+    successor_root = _successor_root(root)
+    files = _closed_files_or_empty(successor_root)
+    names = sorted({path.split("/", 1)[0] for path in files})
+    if any(not name.startswith("successor-") or len(name) != len("successor-001") for name in names):
+        raise RedExecutionError("RED_SUCCESSOR_INVALID")
+    version = len(names) + 1
+    name = f"successor-{version:03d}"
+    payloads = {
+        f"runs/red-successors/{name}/candidate-closure.json": canonical_json_bytes({"candidate": observed, "schema_version": "red-successor-candidate-v1"}),
+        f"runs/red-successors/{name}/observed-differences.json": canonical_json_bytes({"differences": _differences(expected, observed), "schema_version": "red-observed-differences-v1"}),
+        f"runs/red-successors/{name}/readiness.json": canonical_json_bytes({"authoritative": False, "metrics_emitted": False, "requires_human_gate": True, "schema_version": "red-successor-readiness-v1"}),
+    }
+    try:
+        write_exact_descriptor_files(root, payloads)
+    except (FilesystemPolicyError, OSError) as error:
+        raise RedExecutionError("RED_SUCCESSOR_PUBLICATION_FAILED") from error
+
+
+def execute_red_with_attempt_custody_v1(
+    *,
+    root: Path,
+    output_root: Path,
+    expected_frozen_inputs: Mapping[str, object] | None = None,
+    write_observer: Callable[[], None] | None = None,
+    socket_probe: Callable[[], object] | None = None,
+) -> dict[str, object]:
+    """Run the temporary Red path while preserving every failed pre-completion state."""
+    try:
+        observed = _frozen_inputs_v1(root)
+    except RedExecutionError as error:
+        raise RedExecutionError("RED_FROZEN_INPUT_UNREADABLE") from error
+    expected = dict(observed) if expected_frozen_inputs is None else dict(expected_frozen_inputs)
+    if expected != observed:
+        failed = _record_failed_attempt_v1(
+            root=root, expected=expected, observed=observed,
+            code="RED_FROZEN_INPUT_DRIFT", stage="frozen_input_validation", security_events=[],
+        )
+        _record_successor_v1(root=root, expected=expected, observed=observed)
+        raise RedExecutionError("RED_FROZEN_INPUT_DRIFT", failed_attempt=failed)
+    _read_attempt_chain_v1(_attempt_root(root), expected)
+    try:
+        result = build_red_evidence_v1(
+            root=root, output_root=output_root, write_observer=write_observer, socket_probe=socket_probe,
+        )
+    except RedExecutionError as error:
+        inherited = error.failed_attempt if isinstance(error.failed_attempt, dict) else {}
+        events = inherited.get("security_events", [])
+        failed = _record_failed_attempt_v1(
+            root=root, expected=expected, observed=observed, code=str(error), stage="temporary_execution",
+            security_events=list(events) if isinstance(events, list) else [],
+        )
+        raise RedExecutionError(str(error), failed_attempt=failed) from error
+    return {**result, "frozen_inputs": observed, "prior_attempts": _read_attempt_chain_v1(_attempt_root(root), expected)}
 
 
 def build_red_evidence_v1(
