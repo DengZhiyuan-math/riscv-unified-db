@@ -5,10 +5,10 @@ milestone_name: milestone
 current_phase: 05
 current_phase_name: authorized-execution-and-immutable-evidence
 status: complete
-stopped_at: Phase 05 completed through the v3 05-08 successor terminal record 3bf0c8fcee446111ea1dd93a3cc6cf6f6dedb630f55bb93c8852cfd3707d3f15
-last_updated: "2026-08-05T21:20:22Z"
+stopped_at: Phase 6 context gathered; Phase 5 remains the active dependency
+last_updated: "2026-08-05T21:57:06.366Z"
 last_activity: 2026-08-05
-last_activity_desc: Completed v3 all-tools validation, no-replace cache publication, formal zero-write replay, two guarded regressions, and the create-only terminal attempt-04 without changing formal authority
+last_activity_desc: Completed Phase 05 terminal validation successor at local commit `1d83a6cc`.
 progress:
   total_phases: 7
   completed_phases: 4
@@ -211,6 +211,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-05T20:39:06+02:00
-Stopped at: `FWD-05-08-MUSTOOL-INCLUDE-NEXT-INTTYPES-20260805` preserved completed Task 01 commit `d61c2b60`, attempt-02 SHA-256 `84feca91...f32`, the three-line PRIi64 spacing decision, both direct-header predecessor records, and all prior evidence; resume Task 02 only by adding those three spacing lines plus one exact `#include_next <inttypes.h>` after pristine `#include <string.h>` to the existing named mustool patch, binding the combined successor additions as one path/two hunks within the complete patch/source-diff/tree identities, and changing no include-search path, build flag, environment, language mode, or further source byte
-Resume file: .planning/phases/05-authorized-execution-and-immutable-evidence/05-08-PLAN.md
+Last session: 2026-08-05T21:57:06.343Z
+Stopped at: Phase 6 context gathered; Phase 5 remains the active dependency
+Resume file: .planning/phases/06-partition-aware-ablation-and-metamorphic-evaluation/06-CONTEXT.md
