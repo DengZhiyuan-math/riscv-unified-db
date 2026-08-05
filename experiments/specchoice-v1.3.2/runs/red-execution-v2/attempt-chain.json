@@ -1,0 +1,1 @@
+{"attempts":[{"attempt_id":"red-execution-v2-attempt-001","model_call_ledger_sha256":"7ec5d507cc4daa3d21002195570c7aa0f40d6a1b40e76683725c3ed2d8456fd3","receipt_sha256":"ed9c5f0d57277ced899615477043f00fc897a95812b9a3bdffb8568e6c203e74","status":"completed"}],"schema_version":"red-attempt-chain-v2"}

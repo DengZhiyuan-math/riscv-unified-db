@@ -1,0 +1,1 @@
+{"N_strict":0,"actual_cells":0,"branch":"red","cells":[],"expected_cells":0,"formula":"0*3*0=0","partitions":{"A":{"attempted":0,"completed":0,"expected":0,"failed":0,"retried":0},"B":{"attempted":0,"completed":0,"expected":0,"failed":0,"retried":0},"C":{"attempted":0,"completed":0,"expected":0,"failed":0,"retried":0}},"repeat_count":0,"schema_version":"red-zero-cell-matrix-v2"}
