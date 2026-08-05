@@ -5,14 +5,14 @@ milestone_name: milestone
 current_phase: 05
 current_phase_name: authorized-execution-and-immutable-evidence
 status: executing
-stopped_at: 05-02 final closure rejected; replan required before formal Red publication
-last_updated: "2026-08-05T08:25:38.379Z"
+stopped_at: Phase 05 successor plans created; ready for 05-04 Gate A contract work
+last_updated: "2026-08-05T08:52:58Z"
 last_activity: 2026-08-05
 last_activity_desc: Phase 05 execution started
 progress:
   total_phases: 7
   completed_phases: 3
-  total_plans: 41
+  total_plans: 42
   completed_plans: 34
   percent: 43
 ---
@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-07-30)
 ## Current Position
 
 Phase: 05 (authorized-execution-and-immutable-evidence) — EXECUTING
-Plan: 3 of 4
+Plan: 2 of 5 active discoverable plans complete (05-00 and 05-01); 05-02 is rejected-not-completed and 05-03 is superseded/unexecuted
 Status: Ready to execute
 Last activity: 2026-08-05 — Phase 05 execution started
 
-Progress: [████████░░] 83%
+Progress: [████░░░░░░] 40% of executable Phase 5 plans complete
 
 ## Performance Metrics
 
@@ -166,6 +166,7 @@ Recent decisions affecting current work:
 - [Phase ?]: The handoff is valid only while the pinned tools, pyproject digest, and empty formal target namespaces agree.
 - [Phase ?]: User explicitly approved only the exact Phase 5 Red contract bound to policy c48b5c607aa3a6be532ca0accb7f9bfd685b1eab60f82dc2b4b4c4ce97285d15 and v6 authority 363cf85c4088f5f268692f8319b70b50f7ed717f7145ed84a6923499ae992518; byte drift requires a successor and new human gate.
 - [Phase ?]: [Phase 05 Plan 02] User selected reject-final-closure: Task 05-02-03 is prohibited because the frozen policy and CLI expose only execute-red-temporary while the planned formal publication requires execute-red. All formal, attempt, and successor targets remain absent; a versioned successor and new contract/final-closure gates are required.
+- [Phase 05]: Rejected 05-02 and unexecuted 05-03 are preserved as non-discoverable historical documents with no fabricated summaries; 05-04 through 05-06 are the only active successors, with separate Gate A and Gate B approvals before successor-only publication.
 
 ### Pending Todos
 
@@ -184,6 +185,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-05T08:25:38.365Z
-Stopped at: 05-02 final closure rejected; replan required before formal Red publication
-Resume file: .planning/phases/05-authorized-execution-and-immutable-evidence/05-02-PLAN.md
+Last session: 2026-08-05T08:52:58Z
+Stopped at: Phase 05 successor plans created; ready for 05-04 Gate A contract work
+Resume file: .planning/phases/05-authorized-execution-and-immutable-evidence/05-04-PLAN.md

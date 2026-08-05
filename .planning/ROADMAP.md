@@ -297,27 +297,39 @@ Plans:
   3. On Green/Yellow, the reviewer can inspect each call's prompt hash, model snapshot, sampling and output settings, actual token use, raw response, parse result, refusal/truncation state, and retry/failure state.
   4. On Red, the reviewer can verify an empty real-model call ledger and preserved runner, construction, ambiguity, and trigger evidence; the G/Y requirements remain conditional until Phase 7 validates Red closure.
 
-**Plans:** 2/4 plans executed
+**Plans:** 2/5 executable plans complete; 2 historical plans retired without completion; 3 successor plans pending
 
 Plans:
 
 - [x] 05-00-PLAN.md
 - [x] 05-01-PLAN.md
-- [ ] 05-02-PLAN.md
-- [ ] 05-03-PLAN.md
+- `05-02-REJECTED.md` — partial implementation followed by explicit final-closure rejection; not completed and no summary exists.
+- `05-03-SUPERSEDED.md` — unexecuted predecessor audit; not completed and no summary exists.
+- [ ] 05-04-PLAN.md — implement and freeze the separate successor contract, then obtain Gate A approval.
+- [ ] 05-05-PLAN.md — rehearse the exact command, obtain Gate B confirmation, and publish only the successor namespace.
+- [ ] 05-06-PLAN.md — audit successor evidence and exact resume read-only.
 
 **Wave 1**
 
 - [x] 05-00: Verify and record the already-restored pinned local toolchain before the tracer, without experiment authority.
-- [ ] 05-01: Implement freeze-root verification, immutable envelopes, raw-first persistence, and the stable execution plan.
+- [x] 05-01: Implement freeze-root verification, immutable envelopes, raw-first persistence, and the stable execution plan.
 
-**Wave 2** *(blocked on Wave 1 completion)*
+**Historical Waves 2-3** *(retired forward-only after rejection commit `42733101`; excluded from plan discovery)*
 
-- [ ] 05-02: Execute the authorized strict A/B/C matrix or the Red no-call branch without crossing the gate.
+- `05-02-REJECTED.md`: Tasks 1-2 reached the final-closure checkpoint; the human rejected publication because the frozen interface did not expose the required formal command. Task 3 never ran.
+- `05-03-SUPERSEDED.md`: Never executed because its predecessor formal root was never published.
 
-**Wave 3** *(blocked on Wave 2 completion)*
+**Wave 2** *(blocked on completed 05-01 and forward-only historical reconciliation)*
 
-- [ ] 05-03: Audit cell completeness, call metadata, evidence lineage, replayability, and drift-triggered stop behavior.
+- [ ] 05-04: Create the distinct successor policy/modules/tests, prove the exact production command in copied roots, and obtain Gate A contract approval.
+
+**Wave 3** *(blocked on Wave 2 completion and explicit Gate A approval)*
+
+- [ ] 05-05: Rehearse the unchanged successor closure, obtain Gate B final confirmation, and publish or exactly resume only the successor Red evidence set.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 05-06: Independently audit the successor formal/attempt graph and prove actual exact-resume zero writes without changing evidence.
 
 ### Phase 6: Partition-Aware Ablation and Metamorphic Evaluation
 
@@ -407,6 +419,6 @@ Plans:
 | 2. Deterministic Measurement Spine | 22/22 | Complete | 2026-08-03 |
 | 3. Human-Reviewed Data Preregistration | 4/4 | Complete   | 2026-08-04 |
 | 4. Offline Treatments, Retrieval, and Branch Freeze | 4/4 | Complete    | 2026-08-04 |
-| 5. Authorized Execution and Immutable Evidence | 2/4 | In Progress|  |
+| 5. Authorized Execution and Immutable Evidence | 2/5 executable (2 historical plans retired) | In Progress|  |
 | 6. Partition-Aware Ablation and Metamorphic Evaluation | 0/4 | Not started | - |
 | 7. Reproducible Feasibility Conclusion | 0/3 | Not started | - |
