@@ -70,7 +70,7 @@ status: complete
 ## Task Commits
 
 1. **Task 1: Make the unchanged v2 root durable and publish the path-mapping successor** — `ff8c62e3` (`fix`)
-2. **Task 2: Prove the mapped chain from a clean Git export and hand off re-verification** — pending this summary commit (`docs`)
+2. **Task 2: Prove the mapped chain from a clean Git export and hand off re-verification** — `f0cb15a0` (`docs`)
 
 ## Evidence Verified
 
