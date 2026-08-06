@@ -1,0 +1,112 @@
+{
+    "authority_limits": {
+        "external_publication_authorized": false,
+        "model_authorized": false,
+        "network_authorized": false,
+        "provider_authorized": false,
+        "retrieval_authorized": false,
+        "subprocess_authorized": false
+    },
+    "branch": "red",
+    "component_ids": [
+        "applicability",
+        "atomic_rows",
+        "construction",
+        "deterministic_measurement",
+        "failures",
+        "metrics",
+        "populations",
+        "red_execution_evidence",
+        "warnings"
+    ],
+    "generation_id": "partition-evaluation-red-generation-001",
+    "inputs": [
+        {
+            "path": "data/preregistration/family-registry-v1.json",
+            "sha256": "33dfbce9ce02a1864697de2945df9d2f6811019e8c9d077226727f3a9ce54ceb"
+        },
+        {
+            "path": "data/preregistration/metamorphic-registry-v1.json",
+            "sha256": "78290c9c1eb4f4eea60b92f3d1cd1e87fd07d4f480313da711e6574b2629d12e"
+        },
+        {
+            "path": "data/preregistration/pair-relevance-registry-v1.json",
+            "sha256": "ffa608bc3326cde6cb6b581b4567f2404ef92d1b5ca3483393757716b24e0fa3"
+        },
+        {
+            "path": "data/preregistration/split-manifest-v1.json",
+            "sha256": "bf0e77b63c66a2fc9868c62c0c1b8ae35088f127662c7c0f88adcdca6c5bced7"
+        },
+        {
+            "path": "phase2/source-authority.json",
+            "sha256": "0ff1bb7c22a11003595e59b6c616400b21218121639835f7529837085f2c6bae"
+        },
+        {
+            "path": "phase3/data-authority-v1.json",
+            "sha256": "da8650a49940f88629ea5bf3eee83dc6091fad19577dd5b54399525c0617db77"
+        },
+        {
+            "path": "phase4/branch-authority-v6.json",
+            "sha256": "363cf85c4088f5f268692f8319b70b50f7ed717f7145ed84a6923499ae992518"
+        },
+        {
+            "path": "receipts/red-execution-v2.json",
+            "sha256": "d46a965d94c94dc38a253f05d874aa8c2de5e987b87aa73a7bf45ddcddec4d6b"
+        },
+        {
+            "path": "receipts/runtime-executable-closure-v4.json",
+            "sha256": "ccaa237c248d374fad781f6645d603d8d64710e8e4c0a748254caccbb7f4a018"
+        },
+        {
+            "path": "runs/measurement-attempts/formal-golden-pr2164-v6/attempt.json",
+            "sha256": "d67b6ad6ed258b207e7d7d80b6c6186adf19cb59d44e38035260037564bb31b4"
+        },
+        {
+            "path": "runs/measurement-attempts/formal-golden-pr2164-v6/case-outcomes.json",
+            "sha256": "2334fae64cd627f5c0607b30e32a707014d0abb51ebf440a3df414b537512c92"
+        },
+        {
+            "path": "runs/measurement-attempts/formal-golden-pr2164-v6/diagnostics.json",
+            "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        {
+            "path": "runs/measurement-attempts/formal-golden-pr2164-v6/metrics.json",
+            "sha256": "baea9addeb267a107907b194a7135ccb5efb3226b054335e3de7a8205960dd94"
+        }
+    ],
+    "metric_ids": [
+        "b_minus_a",
+        "c_minus_b",
+        "classify_out",
+        "disposition",
+        "evidence_integrity",
+        "frame_authority",
+        "frame_choice_object",
+        "frame_choice_space_origin",
+        "identity_exact",
+        "identity_incorrect",
+        "identity_missing",
+        "metamorphic_choice_space_origin",
+        "metamorphic_hardware_software_authority",
+        "metamorphic_normative_note_example",
+        "metamorphic_warl_fixed_legal_set",
+        "negative_controls",
+        "pairhit_at_2",
+        "repeat_disagreement",
+        "shortcut_family_delta",
+        "surfacing"
+    ],
+    "n_strict": 0,
+    "outputs": {
+        "markdown": "runs/partition-evaluation-red-generation-001/evaluation-report.md",
+        "packet": "runs/partition-evaluation-red-generation-001/evaluation-packet.json",
+        "readiness": "receipts/partition-evaluation-red-generation-001-readiness.json"
+    },
+    "policy_sha256": "a7e985607fc0d334ca794eb0f6904738814e544afebc048390a914441731f9c5",
+    "repeat_count": 0,
+    "runtime_closure": {
+        "path": "receipts/runtime-executable-closure-v4.json",
+        "sha256": "ccaa237c248d374fad781f6645d603d8d64710e8e4c0a748254caccbb7f4a018"
+    },
+    "schema_version": "partition-evaluation-policy-v1"
+}
