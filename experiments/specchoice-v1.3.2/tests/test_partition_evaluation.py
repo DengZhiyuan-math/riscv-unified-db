@@ -24,6 +24,7 @@ from specchoice_evaluation.core import (
     MetricResult,
     RepeatComparison,
     RepeatObservation,
+    VerifiedJoinReference,
     WarningRecord,
     build_construction_feasibility,
     build_failure_ledger,
@@ -154,6 +155,68 @@ class PartitionEvaluationTests(unittest.TestCase):
         cross_partition = close_join("evaluation", "strict", "case-1", bindings, [good, self._row(treatment="A", partition="auxiliary")])
         self.assertEqual("invalid_withheld", duplicate.status)
         self.assertEqual("invalid_withheld", cross_partition.status)
+
+    @staticmethod
+    def _pair_controls(rows: list[AtomicResultRow]) -> dict[tuple[str, str, str, str, str, str], dict[str, object]]:
+        return {
+            row.identity(): {
+                "delegation_frame": "without_frame" if row.treatment.value == "A" else "with_frame",
+                "pair_selection": "other" if row.treatment.value == "C" else "fixed",
+                "prompt": "same",
+            }
+            for row in rows
+        }
+
+    def _verified_reference(
+        self, row: AtomicResultRow, *, expected_bindings: dict[str, ArtifactBinding] | None = None,
+    ) -> VerifiedJoinReference:
+        bindings = {role: self._binding(role) for role in (
+            "gold", "prediction", "prompt", "raw_response", "parsed_response",
+            "evidence_spans", "treatment", "repeat",
+        )}
+        manifest = close_join(
+            row.authority_domain, row.partition, row.case_id, bindings, [row],
+            expected_bindings=bindings if expected_bindings is None else expected_bindings,
+        )
+        return VerifiedJoinReference(row, manifest, manifest.join_sha256)
+
+    def test_pairwise_requires_closed_verified_join(self) -> None:
+        rows = [self._row(treatment="A"), self._row(treatment="B")]
+        controls = self._pair_controls(rows)
+        bare = build_pairwise_comparison(rows, "b_minus_a", controls)
+        self.assertEqual("invalid_withheld", bare.result.state)
+        self.assertEqual("PAIRWISE_JOIN_REFERENCE_INVALID", bare.result.blocking_diagnostics[0].code)
+
+        references = [self._verified_reference(row) for row in rows]
+        for candidate in (references[:1], [*references, references[0]]):
+            comparison = build_pairwise_comparison(candidate, "b_minus_a", controls)
+            self.assertEqual("invalid_withheld", comparison.result.state)
+            self.assertEqual("PAIRWISE_JOIN_REFERENCE_INVALID", comparison.result.blocking_diagnostics[0].code)
+
+        cross_case = VerifiedJoinReference(rows[1], references[0].manifest, references[0].expected_join_sha256)
+        comparison = build_pairwise_comparison([references[0], cross_case], "b_minus_a", controls)
+        self.assertEqual("invalid_withheld", comparison.result.state)
+        self.assertEqual("PAIRWISE_JOIN_REFERENCE_INVALID", comparison.result.blocking_diagnostics[0].code)
+
+    def test_substituted_closed_join_hash_cannot_measure(self) -> None:
+        rows = [self._row(treatment="A"), self._row(treatment="B")]
+        controls = self._pair_controls(rows)
+        original = self._verified_reference(rows[0])
+        substituted_bindings = {role: self._binding(role) for role in (
+            "gold", "prediction", "prompt", "raw_response", "parsed_response",
+            "evidence_spans", "treatment", "repeat",
+        )}
+        substituted_bindings["prompt"] = ArtifactBinding(True, "frozen/substituted-prompt.json", "b" * 64, None)
+        substituted_manifest = close_join(
+            rows[0].authority_domain, rows[0].partition, rows[0].case_id, substituted_bindings, [rows[0]],
+            expected_bindings=substituted_bindings,
+        )
+        comparison = build_pairwise_comparison([
+            VerifiedJoinReference(rows[0], substituted_manifest, original.expected_join_sha256),
+            self._verified_reference(rows[1]),
+        ], "b_minus_a", controls)
+        self.assertEqual("invalid_withheld", comparison.result.state)
+        self.assertEqual("PAIRWISE_JOIN_REFERENCE_INVALID", comparison.result.blocking_diagnostics[0].code)
 
     def test_c_minus_b_population_is_independent(self) -> None:
         rows = [
