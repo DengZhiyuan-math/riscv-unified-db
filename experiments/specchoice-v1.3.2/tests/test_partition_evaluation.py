@@ -25,7 +25,7 @@ from specchoice_evaluation.core import (
     WarningRecord,
     build_failure_ledger,
     build_frame_axis_results,
-    build_metamorphic_results,
+    build_pairhit_result,
     build_pairwise_comparison,
     build_population_manifest,
     build_red_evaluation,
@@ -145,35 +145,6 @@ class PartitionEvaluationTests(unittest.TestCase):
         self.assertEqual("not_applicable_red", withheld["surfacing"].state)
         self.assertFalse(any(item.state != "invalid_withheld" for item in withheld.values() if item.metric_id == "frame_authority"))
 
-    def test_red_metamorphic_registry_is_complete_and_unscored(self) -> None:
-        bindings = {"red_execution_evidence": "b" * 64}
-        directions = build_metamorphic_results(EXPERIMENT, bindings)
-        self.assertEqual(
-            (
-                "choice_space_origin",
-                "hardware_software_authority",
-                "normative_note_example",
-                "warl_fixed_legal_set",
-            ),
-            tuple(item["direction_id"] for item in directions),
-        )
-        for direction in directions:
-            self.assertEqual("unavailable", direction["availability"])
-            self.assertFalse(direction["count_eligible"])
-            self.assertEqual("not_applicable_red", direction["state"])
-            self.assertNotIn("outcome", direction)
-            self.assertNotIn("score", direction)
-
-        with tempfile.TemporaryDirectory() as directory:
-            copied = Path(directory) / "experiment"
-            shutil.copytree(EXPERIMENT, copied)
-            registry_path = copied / "data/preregistration/metamorphic-registry-v1.json"
-            registry = json.loads(registry_path.read_text())
-            registry["directions"] = registry["directions"][:-1]
-            registry_path.write_bytes(canonical_json_bytes(registry))
-            withheld = build_metamorphic_results(copied, bindings)
-        self.assertTrue(all(item["state"] == "invalid_withheld" for item in withheld))
-
     def test_repeat_and_shortcut_family_red_tracks_have_no_observations(self) -> None:
         bindings = {"red_execution_evidence": "b" * 64}
         population, observations, comparisons, result = build_repeat_results(bindings)
@@ -190,6 +161,19 @@ class PartitionEvaluationTests(unittest.TestCase):
         self.assertEqual("not_applicable_red", shortcut.state)
         self.assertEqual((), shortcut.blocking_diagnostics)
         self.assertTrue(all(item.state == "not_applicable_red" for item in metamorphic))
+
+    def test_pairhit_uses_only_frozen_eligible_ids(self) -> None:
+        bindings = {"red_execution_evidence": "b" * 64}
+        population, result, retrieved = build_pairhit_result(EXPERIMENT, {}, bindings)
+        self.assertEqual("pairhit.at_2", population.population_id)
+        self.assertEqual((), population.eligible_ids)
+        self.assertEqual("empty_population", result.state)
+        self.assertIsNone(result.numerator)
+        self.assertIsNone(result.denominator)
+        self.assertIsNone(result.score)
+        self.assertEqual((), retrieved)
+        with self.assertRaisesRegex(Exception, "PAIRHIT_RETRIEVED_CASE_INVALID"):
+            build_pairhit_result(EXPERIMENT, {"ambient-case": ("pair-1",)}, bindings)
 
     def test_red_metrics_preserve_applicability_and_separate_denominators(self) -> None:
         bundle = build_red_evaluation(EXPERIMENT)

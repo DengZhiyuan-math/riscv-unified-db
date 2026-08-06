@@ -13,6 +13,7 @@ from specchoice_data.relevance import (
     REQUIRED_METAMORPHIC_DIRECTIONS,
     RelevanceValidationError,
     validate_metamorphic_registry_v1,
+    validate_pair_relevance_registry_v1,
 )
 from specchoice_evidence.canonical import canonical_json_bytes, sha256_bytes
 from specchoice_evidence.filesystem import (
@@ -50,6 +51,13 @@ _DETERMINISTIC_PATHS = (
 _METAMORPHIC_PATHS = (
     "phase3/data-authority-v1.json",
     "data/preregistration/metamorphic-registry-v1.json",
+)
+_FROZEN_REGISTRY_PATHS = (
+    "data/preregistration/family-registry-v1.json",
+    "data/preregistration/metamorphic-registry-v1.json",
+    "data/preregistration/pair-relevance-registry-v1.json",
+    "data/preregistration/split-manifest-v1.json",
+    "phase3/data-authority-v1.json",
 )
 
 
@@ -178,6 +186,59 @@ class PairwiseComparison:
     population_sha256: str
     paired_row_ids: tuple[tuple[tuple[str, str, str, str, str, str], tuple[str, str, str, str, str, str]], ...]
     result: MetricResult
+
+
+@dataclass(frozen=True)
+class RepeatObservation:
+    """One closed repeat observation, separate from its disagreement comparison."""
+
+    observation_id: str
+    authority_domain: str
+    partition: str
+    case_id: str
+    treatment: str
+    repeat_id: str
+    closed_join_sha256: str
+    outcome_id: str
+
+    def __post_init__(self) -> None:
+        values = (
+            self.observation_id, self.authority_domain, self.partition, self.case_id,
+            self.treatment, self.repeat_id, self.outcome_id,
+        )
+        if (
+            any(not isinstance(value, str) or not value for value in values)
+            or len(self.closed_join_sha256) != 64
+            or any(character not in "0123456789abcdef" for character in self.closed_join_sha256)
+        ):
+            raise EvaluationError("REPEAT_OBSERVATION_INVALID")
+
+
+@dataclass(frozen=True)
+class RepeatComparison:
+    """A comparison of two exact repeat observations, never a result row."""
+
+    comparison_id: str
+    population_id: str
+    left_repeat_id: str
+    right_repeat_id: str
+    left_observation_id: str
+    right_observation_id: str
+    agreement: bool
+    result: MetricResult
+
+    def __post_init__(self) -> None:
+        values = (
+            self.comparison_id, self.population_id, self.left_repeat_id,
+            self.right_repeat_id, self.left_observation_id, self.right_observation_id,
+        )
+        if (
+            any(not isinstance(value, str) or not value for value in values)
+            or self.left_repeat_id == self.right_repeat_id
+            or self.left_observation_id == self.right_observation_id
+            or not isinstance(self.agreement, bool)
+        ):
+            raise EvaluationError("REPEAT_COMPARISON_INVALID")
 
 
 _FAILURE_DOMAINS = frozenset({"authority", "join", "construction", "evaluation", "experimental_outcome"})
@@ -714,22 +775,96 @@ def _deterministic_payload(root: Path) -> tuple[list[dict[str, object]], dict[st
     return [dict(item) for item in cases if isinstance(item, dict)], metrics, [dict(item) for item in predictions if isinstance(item, dict)]
 
 
-def _metamorphic_directions(root: Path, bindings: Mapping[str, str]) -> tuple[Mapping[str, object], ...]:
+def _self_hash_valid(value: Mapping[str, object], field: str) -> bool:
+    observed = value.get(field)
+    if not isinstance(observed, str) or len(observed) != 64:
+        return False
+    basis = dict(value)
+    basis.pop(field, None)
+    return observed == sha256_bytes(canonical_json_bytes(basis))
+
+
+def _frozen_registry_values(root: Path) -> tuple[dict[str, Mapping[str, object]], dict[str, str]]:
+    """Load the exact frozen registry set before admitting a dependent result."""
+    files = read_authoritative_files(root, list(_FROZEN_REGISTRY_PATHS))
+    values = {
+        path: _canonical_object(raw, "FROZEN_REGISTRY_CANONICAL_INVALID")
+        for path, (_evidence, raw) in files.items()
+    }
+    if not all(isinstance(value, Mapping) for value in values.values()):
+        raise EvaluationError("FROZEN_REGISTRY_INVALID")
+    family = values[_FROZEN_REGISTRY_PATHS[0]]
+    metamorphic = values[_FROZEN_REGISTRY_PATHS[1]]
+    relevance = values[_FROZEN_REGISTRY_PATHS[2]]
+    split = values[_FROZEN_REGISTRY_PATHS[3]]
+    authority = values[_FROZEN_REGISTRY_PATHS[4]]
+    assert all(isinstance(value, Mapping) for value in (family, metamorphic, relevance, split, authority))
+    if (
+        not _self_hash_valid(family, "registry_sha256")
+        or not _self_hash_valid(metamorphic, "registry_sha256")
+        or not _self_hash_valid(relevance, "registry_sha256")
+        or not _self_hash_valid(split, "manifest_sha256")
+    ):
+        raise EvaluationError("FROZEN_REGISTRY_HASH_INVALID")
+    family_sha = str(family["registry_sha256"])
+    relevance_sha = str(relevance["registry_sha256"])
+    split_sha = str(split["manifest_sha256"])
+    metamorphic_sha = str(metamorphic["registry_sha256"])
+    relevance_bindings = relevance.get("bindings")
+    metamorphic_bindings = metamorphic.get("bindings")
+    authority_bindings = authority.get("bindings")
+    if (
+        not isinstance(relevance_bindings, Mapping)
+        or not isinstance(metamorphic_bindings, Mapping)
+        or not isinstance(authority_bindings, Mapping)
+        or relevance_bindings.get("family_registry_sha256") != family_sha
+        or relevance_bindings.get("split_manifest_sha256") != split_sha
+        or metamorphic_bindings.get("family_registry_sha256") != family_sha
+        or metamorphic_bindings.get("relevance_registry_sha256") != relevance_sha
+        or metamorphic_bindings.get("split_manifest_sha256") != split_sha
+        or authority_bindings.get("metamorphic_registry_sha256") != metamorphic_sha
+    ):
+        raise EvaluationError("FROZEN_REGISTRY_BINDING_INVALID")
+    validate_pair_relevance_registry_v1(
+        relevance,
+        split_manifest=split,
+        approved_pairs={},
+        expected_bindings=relevance_bindings,
+        case_targets={},
+    )
+    validate_metamorphic_registry_v1(
+        metamorphic,
+        expected_bindings=metamorphic_bindings,
+        accepted_root=None,
+        frozen_metamorphic_candidate_ids=set(),
+        dataset_member_ids=set(),
+    )
+    return (
+        {
+            "family": family,
+            "metamorphic": metamorphic,
+            "relevance": relevance,
+            "split": split,
+            "authority": authority,
+        },
+        {
+            "family_registry_sha256": family_sha,
+            "metamorphic_registry_sha256": metamorphic_sha,
+            "relevance_registry_sha256": relevance_sha,
+            "split_manifest_sha256": split_sha,
+        },
+    )
+
+
+def build_metamorphic_results(root: Path, bindings: Mapping[str, str]) -> tuple[Mapping[str, object], ...]:
+    """Expose all four frozen direction records without inventing Red observations."""
     try:
-        files = read_authoritative_files(root, list(_METAMORPHIC_PATHS))
-        authority = _canonical_object(files[_METAMORPHIC_PATHS[0]][1], "METAMORPHIC_REGISTRY_INVALID")
-        registry = _canonical_object(files[_METAMORPHIC_PATHS[1]][1], "METAMORPHIC_REGISTRY_INVALID")
-        if not isinstance(authority, dict) or not isinstance(registry, dict):
-            raise EvaluationError("METAMORPHIC_REGISTRY_INVALID")
-        expected = registry.get("bindings")
-        expected_hash = authority.get("bindings", {}).get("metamorphic_registry_sha256") if isinstance(authority.get("bindings"), dict) else None
-        if not isinstance(expected, dict) or expected_hash != registry.get("registry_sha256"):
-            raise EvaluationError("METAMORPHIC_BINDING_INVALID")
-        validate_metamorphic_registry_v1(registry, expected_bindings=expected, accepted_root=None, frozen_metamorphic_candidate_ids=set(), dataset_member_ids=set())
+        values, registry_bindings = _frozen_registry_values(root)
+        registry = values["metamorphic"]
         rows = []
-        for direction in registry["directions"]:
+        for direction in sorted(registry["directions"], key=lambda item: str(item["direction_id"])):
             rows.append({
-                "authority_bindings": dict(sorted({**bindings, "metamorphic_registry_sha256": str(registry["registry_sha256"])}.items())),
+                "authority_bindings": dict(sorted({**bindings, **registry_bindings}.items())),
                 "availability": direction["availability"], "count_eligible": direction["count_eligible"],
                 "direction_id": direction["direction_id"], "rationale": direction["rationale"],
                 "registry_sha256": registry["registry_sha256"],
@@ -739,6 +874,38 @@ def _metamorphic_directions(root: Path, bindings: Mapping[str, str]) -> tuple[Ma
     except (EvaluationError, RelevanceValidationError, FilesystemPolicyError, OSError, TypeError, ValueError) as error:
         diagnostic = _diagnostic(str(error), "metamorphic_registry")
         return tuple({"authority_bindings": dict(sorted(bindings.items())), "blocking_diagnostics": [diagnostic.as_dict()], "direction_id": direction, "state": "invalid_withheld"} for direction in REQUIRED_METAMORPHIC_DIRECTIONS)
+
+
+def build_repeat_results(
+    bindings: Mapping[str, str],
+) -> tuple[PopulationManifest, tuple[RepeatObservation, ...], tuple[RepeatComparison, ...], MetricResult]:
+    """Represent Red's empty repeat population without a synthetic observation."""
+    population = build_population_manifest("repeat.disagreement", "red", ())
+    return population, (), (), _not_applicable("repeat_disagreement", bindings)
+
+
+def build_shortcut_family_results(root: Path, bindings: Mapping[str, str]) -> tuple[MetricResult, tuple[MetricResult, ...]]:
+    """Bind family/metamorphic delta tracks to frozen registries before Red inapplicability."""
+    try:
+        _values, registry_bindings = _frozen_registry_values(root)
+        bound = dict(sorted({**bindings, **registry_bindings}.items()))
+        return (
+            _not_applicable("shortcut_family_delta", bound),
+            tuple(_not_applicable(f"metamorphic_{direction}", bound) for direction in REQUIRED_METAMORPHIC_DIRECTIONS),
+        )
+    except (EvaluationError, RelevanceValidationError, FilesystemPolicyError, OSError, TypeError, ValueError) as error:
+        diagnostic = _diagnostic(str(error), "frozen_registries")
+        return (
+            MetricResult("shortcut_family_delta", "invalid_withheld", bindings, blocking_diagnostics=(diagnostic,)),
+            tuple(
+                MetricResult(f"metamorphic_{direction}", "invalid_withheld", bindings, blocking_diagnostics=(diagnostic,))
+                for direction in REQUIRED_METAMORPHIC_DIRECTIONS
+            ),
+        )
+
+
+def _metamorphic_directions(root: Path, bindings: Mapping[str, str]) -> tuple[Mapping[str, object], ...]:
+    return build_metamorphic_results(root, bindings)
 
 
 def build_red_evaluation(root: Path) -> EvaluationBundle:
@@ -791,19 +958,21 @@ def build_red_evaluation(root: Path) -> EvaluationBundle:
             "identity_incorrect": MetricResult("identity_incorrect", "measured", bindings, by_id["identity_incorrect"].population_id, by_id["identity_incorrect"].set_sha256, 0, by_id["identity_incorrect"].denominator, 0.0),
             "identity_missing": MetricResult("identity_missing", "measured", bindings, by_id["identity_missing"].population_id, by_id["identity_missing"].set_sha256, 0, by_id["identity_missing"].denominator, 0.0),
         }
-        metrics = tuple(measured.get(metric_id, _not_applicable(metric_id, bindings)) for metric_id in METRIC_IDS)
+        repeat_population, _observations, _comparisons, repeat_result = build_repeat_results(bindings)
+        shortcut_result, metamorphic_results = build_shortcut_family_results(root, bindings)
+        non_pair_results = {
+            "repeat_disagreement": repeat_result,
+            "shortcut_family_delta": shortcut_result,
+            **{item.metric_id: item for item in metamorphic_results},
+        }
+        metrics = tuple(measured.get(metric_id, non_pair_results.get(metric_id, _not_applicable(metric_id, bindings))) for metric_id in METRIC_IDS)
         directions = _metamorphic_directions(root, bindings)
-        if any(item.get("state") == "invalid_withheld" for item in directions):
-            metrics = tuple(
-                MetricResult(metric.metric_id, "invalid_withheld", metric.authority_bindings, blocking_diagnostics=(_diagnostic("METAMORPHIC_DOMAIN_WITHHELD", "metamorphic_registry"),))
-                if metric.metric_id.startswith("metamorphic_") else metric for metric in metrics
-            )
         applicability = tuple(metrics)
         pairwise = tuple(
             build_pairwise_comparison((), comparison_id, {}, authority_bindings=bindings)
             for comparison_id in ("b_minus_a", "c_minus_b")
         )
-        return EvaluationBundle("partition-evaluation-red-v1", "red", 0, 0, True, deterministic, red, applicability, populations, rows, metrics, base_diagnostics, directions, pairwise)
+        return EvaluationBundle("partition-evaluation-red-v1", "red", 0, 0, True, deterministic, red, applicability, populations + (repeat_population,), rows, metrics, base_diagnostics, directions, pairwise)
     except (EvaluationError, FilesystemPolicyError, OSError, TypeError, ValueError, json.JSONDecodeError) as error:
         diagnostics = ordered_diagnostics(list(base_diagnostics) + [_diagnostic(str(error), "deterministic_measurement")])
         metrics = tuple(MetricResult(metric_id, "invalid_withheld", bindings, blocking_diagnostics=diagnostics) for metric_id in METRIC_IDS)
