@@ -8,6 +8,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from types import MappingProxyType
 
 from specchoice_data.relevance import (
     REQUIRED_METAMORPHIC_DIRECTIONS,
@@ -44,6 +45,26 @@ _ARTIFACT_ROLES = (
     "gold", "prediction", "prompt", "raw_response", "parsed_response",
     "evidence_spans", "treatment", "repeat",
 )
+PAIRWISE_INTERVENTION_CONTRACTS = MappingProxyType({
+    "b_minus_a": MappingProxyType({
+        "intervention": "delegation_frame",
+        "left_treatment": "B",
+        "right_treatment": "A",
+        "treatment_values": MappingProxyType({
+            "A": "2312907e7355ecdd168ef68bbc855bf3a988b76542e47db4d3d06da302923d38",
+            "B": "49ea5296eb68002cf6bbf0e3b616ce7eb6e6dc063d9f84948d09511cec01faed",
+        }),
+    }),
+    "c_minus_b": MappingProxyType({
+        "intervention": "pair_selection",
+        "left_treatment": "C",
+        "right_treatment": "B",
+        "treatment_values": MappingProxyType({
+            "B": "b575ccc3f5f3ddb9007962c60749ddf97bbb665c8b7d254c11d16ad1d81bdb96",
+            "C": "c17d314784872956ef41062dd17c32cf721fd892794727801b4ab4157b1aad11",
+        }),
+    }),
+})
 
 _DETERMINISTIC_PATHS = (
     "phase2/source-authority.json",
@@ -701,13 +722,15 @@ def build_pairwise_comparison(
     authority_bindings: Mapping[str, str] | None = None,
 ) -> PairwiseComparison:
     """Build one exact-control B-A or C-B comparison without denominator reuse."""
-    contracts = {
-        "b_minus_a": ("B", "A", "delegation_frame"),
-        "c_minus_b": ("C", "B", "pair_selection"),
-    }
-    if comparison_id not in contracts:
+    if comparison_id not in PAIRWISE_INTERVENTION_CONTRACTS:
         raise EvaluationError("PAIRWISE_COMPARISON_INVALID")
-    left_treatment, right_treatment, intervention = contracts[comparison_id]
+    contract = PAIRWISE_INTERVENTION_CONTRACTS[comparison_id]
+    left_treatment = str(contract["left_treatment"])
+    right_treatment = str(contract["right_treatment"])
+    intervention = str(contract["intervention"])
+    treatment_values = contract["treatment_values"]
+    if not isinstance(treatment_values, Mapping):
+        raise EvaluationError("PAIRWISE_COMPARISON_INVALID")
     bindings = dict(authority_bindings or {})
     population_id = f"pairwise.{comparison_id}"
     if not references:
@@ -719,7 +742,7 @@ def build_pairwise_comparison(
 
     groups: dict[tuple[str, str, str, str], dict[str, AtomicResultRow]] = {}
     invalid_join = False
-    invalid_control = False
+    invalid_intervention = False
     for reference in references:
         if not _valid_verified_join_reference(reference):
             invalid_join = True
@@ -744,13 +767,17 @@ def build_pairwise_comparison(
         left_controls = control_projections.get(left.identity())
         right_controls = control_projections.get(right.identity())
         if not isinstance(left_controls, Mapping) or not isinstance(right_controls, Mapping):
-            invalid_control = True
+            invalid_intervention = True
             continue
-        if set(left_controls) != set(right_controls) or any(
-            left_controls[name] != right_controls[name]
-            for name in left_controls if name != intervention
+        if (
+            set(left_controls) != set(right_controls)
+            or intervention not in left_controls
+            or left_controls[intervention] != treatment_values.get(left_treatment)
+            or right_controls[intervention] != treatment_values.get(right_treatment)
+            or left_controls[intervention] == right_controls[intervention]
+            or any(left_controls[name] != right_controls[name] for name in left_controls if name != intervention)
         ):
-            invalid_control = True
+            invalid_intervention = True
             continue
         paired.append((left, right))
 
@@ -765,9 +792,9 @@ def build_pairwise_comparison(
         paired_ids = ()
         diagnostic = _diagnostic("PAIRWISE_JOIN_REFERENCE_INVALID", comparison_id)
         result = MetricResult(comparison_id, "invalid_withheld", bindings, blocking_diagnostics=(diagnostic,))
-    elif invalid_control or not paired:
+    elif invalid_intervention or not paired:
         paired_ids = ()
-        diagnostic = _diagnostic("PAIRWISE_CONTROL_OR_CLOSURE_INVALID", comparison_id)
+        diagnostic = _diagnostic("PAIRWISE_INTERVENTION_INVALID", comparison_id)
         result = MetricResult(comparison_id, "invalid_withheld", bindings, blocking_diagnostics=(diagnostic,))
     else:
         numerator = sum(
