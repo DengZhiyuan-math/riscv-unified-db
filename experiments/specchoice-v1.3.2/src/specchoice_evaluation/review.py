@@ -29,9 +29,10 @@ from .core import (
     build_red_evaluation,
 )
 
-_POLICY_SCHEMA = "partition-evaluation-policy-v1"
-_PACKET_SCHEMA = "partition-evaluation-red-packet-v1"
-_READINESS_SCHEMA = "partition-evaluation-red-readiness-v1"
+_POLICY_SCHEMA = "partition-evaluation-policy-v2"
+_LEGACY_POLICY_SCHEMA = "partition-evaluation-policy-v1"
+_PACKET_SCHEMA = "partition-evaluation-red-packet-v2"
+_READINESS_SCHEMA = "partition-evaluation-red-readiness-v2"
 _OUTPUT_KEYS = ("packet", "markdown", "readiness")
 _DECISION_SCHEMA = "partition-evaluation-review-decision-v1"
 _RESPONSE_VALUES = frozenset(("approved", "disputed", "incomplete"))
@@ -124,8 +125,10 @@ def _input_digest(inputs: Sequence[Mapping[str, object]]) -> str:
     ]))
 
 
-def validate_evaluation_policy(root: Path, policy: Mapping[str, object]) -> None:
+def validate_evaluation_policy(experiment_root: Path, project_root: Path, policy: Mapping[str, object]) -> None:
     """Validate the non-circular, complete local package generation policy."""
+    if policy.get("schema_version") == _LEGACY_POLICY_SCHEMA:
+        _error("EVALUATION_POLICY_LEGACY_GENERATION")
     if policy.get("schema_version") != _POLICY_SCHEMA:
         _error("EVALUATION_POLICY_INVALID")
     if not isinstance(policy.get("generation_id"), str) or not policy["generation_id"]:
@@ -179,7 +182,7 @@ def validate_evaluation_policy(root: Path, policy: Mapping[str, object]) -> None
     if paths != sorted(paths) or len(paths) != len(set(paths)):
         _error("EVALUATION_POLICY_INPUTS_INVALID")
     try:
-        files = read_authoritative_files(root, paths)
+        files = read_authoritative_files(experiment_root, paths)
     except (FilesystemPolicyError, OSError, ValueError) as error:
         raise EvaluationError("EVALUATION_POLICY_INPUTS_INVALID") from error
     for item in normalized:
@@ -187,6 +190,7 @@ def validate_evaluation_policy(root: Path, policy: Mapping[str, object]) -> None
             _error("EVALUATION_POLICY_INPUT_SUBSTITUTED")
     if sha256_bytes(files[str(runtime["path"])][1]) != runtime["sha256"]:
         _error("EVALUATION_POLICY_RUNTIME_INVALID")
+    build_construction_feasibility(experiment_root, project_root, policy.get("construction_inputs", ()))
 
 
 def build_evaluation_packet(
@@ -232,9 +236,11 @@ def build_evaluation_packet(
     return payload
 
 
-def validate_evaluation_packet(root: Path, policy: Mapping[str, object], packet: Mapping[str, object]) -> None:
+def validate_evaluation_packet(
+    experiment_root: Path, project_root: Path, policy: Mapping[str, object], packet: Mapping[str, object],
+) -> None:
     """Recompute packet identities, applicability, denominators, and authority boundaries."""
-    validate_evaluation_policy(root, policy)
+    validate_evaluation_policy(experiment_root, project_root, policy)
     if packet.get("packet_kind") != _PACKET_SCHEMA or packet.get("generation_id") != policy["generation_id"]:
         _error("EVALUATION_PACKET_INVALID")
     if packet.get("policy_sha256") != policy["policy_sha256"] or packet.get("branch") != "red":
@@ -269,6 +275,15 @@ def validate_evaluation_packet(root: Path, policy: Mapping[str, object], packet:
             _error("EVALUATION_PACKET_WARNING_INVALID")
     if packet.get("failures") != []:
         _error("EVALUATION_PACKET_BLOCKING_DOMAIN")
+    expected = build_evaluation_packet(
+        build_red_evaluation(experiment_root),
+        policy=policy,
+        construction_attempts=build_construction_feasibility(
+            experiment_root, project_root, policy["construction_inputs"],
+        ),
+    )
+    if canonical_json_bytes(packet) != canonical_json_bytes(expected):
+        _error("EVALUATION_PACKET_DERIVATION_INVALID")
 
 
 def render_evaluation_markdown(packet: Mapping[str, object]) -> bytes:
@@ -328,10 +343,11 @@ def build_readiness(
 
 
 def validate_readiness(
-    root: Path, policy: Mapping[str, object], packet: Mapping[str, object], markdown: bytes, readiness: Mapping[str, object],
+    experiment_root: Path, project_root: Path, policy: Mapping[str, object], packet: Mapping[str, object], markdown: bytes,
+    readiness: Mapping[str, object],
 ) -> None:
     """Require readiness to bind exact machine material while preserving the human boundary."""
-    validate_evaluation_packet(root, policy, packet)
+    validate_evaluation_packet(experiment_root, project_root, policy, packet)
     if readiness.get("schema_version") != _READINESS_SCHEMA or readiness.get("generation_id") != policy["generation_id"]:
         _error("EVALUATION_READINESS_INVALID")
     expected = build_readiness(packet, policy=policy, markdown=markdown)
@@ -355,27 +371,32 @@ def _outputs_occupied(root: Path, outputs: Mapping[str, object]) -> tuple[bool, 
     return any(states), all(states)
 
 
-def publish_evaluation_package(root: Path, policy: Mapping[str, object]) -> tuple[dict[str, object], bytes, dict[str, object]]:
+def publish_evaluation_package(
+    experiment_root: Path, project_root: Path, policy: Mapping[str, object],
+) -> tuple[dict[str, object], bytes, dict[str, object]]:
     """Create the exact three-file packet or validate a zero-write exact resume."""
-    validate_evaluation_policy(root, policy)
+    validate_evaluation_policy(experiment_root, project_root, policy)
     outputs = policy["outputs"]
     assert isinstance(outputs, Mapping)
-    occupied, complete = _outputs_occupied(root, outputs)
+    occupied, complete = _outputs_occupied(experiment_root, outputs)
     if occupied and not complete:
         _error("EVALUATION_OUTPUT_PARTIAL_OR_OCCUPIED")
-    bundle = build_red_evaluation(root)
-    packet = build_evaluation_packet(bundle, policy=policy, construction_attempts=build_construction_feasibility(root))
-    validate_evaluation_packet(root, policy, packet)
+    bundle = build_red_evaluation(experiment_root)
+    packet = build_evaluation_packet(
+        bundle, policy=policy,
+        construction_attempts=build_construction_feasibility(experiment_root, project_root, policy["construction_inputs"]),
+    )
+    validate_evaluation_packet(experiment_root, project_root, policy, packet)
     markdown = render_evaluation_markdown(packet)
     readiness = build_readiness(packet, policy=policy, markdown=markdown)
-    validate_readiness(root, policy, packet, markdown, readiness)
+    validate_readiness(experiment_root, project_root, policy, packet, markdown, readiness)
     payloads = {
         str(outputs["packet"]): canonical_json_bytes(packet),
         str(outputs["markdown"]): markdown,
         str(outputs["readiness"]): canonical_json_bytes(readiness),
     }
     try:
-        write_exact_descriptor_files(root, payloads)
+        write_exact_descriptor_files(experiment_root, payloads)
     except FilesystemPolicyError as error:
         raise EvaluationError("EVALUATION_OUTPUT_PARTIAL_OR_OCCUPIED") from error
     return packet, markdown, readiness
@@ -459,7 +480,7 @@ def _decision_payload(
 
 
 def build_review_decision(
-    root: Path, policy: Mapping[str, object], *, reviewer_id: str, disposition: str,
+    experiment_root: Path, project_root: Path, policy: Mapping[str, object], *, reviewer_id: str, disposition: str,
     domain_responses: Mapping[str, str], item_responses: Mapping[str, str],
     disputes: Sequence[Mapping[str, object]], d16_acknowledgement: bool,
     mutation_requests: Sequence[object] = (),
@@ -469,12 +490,12 @@ def build_review_decision(
     if not isinstance(outputs, Mapping):
         _error("EVALUATION_POLICY_OUTPUTS_INVALID")
     try:
-        packet = json.loads((root / str(outputs["packet"])).read_text(encoding="utf-8"))
-        markdown = (root / str(outputs["markdown"])).read_bytes()
-        readiness = json.loads((root / str(outputs["readiness"])).read_text(encoding="utf-8"))
+        packet = json.loads((experiment_root / str(outputs["packet"])).read_text(encoding="utf-8"))
+        markdown = (experiment_root / str(outputs["markdown"])).read_bytes()
+        readiness = json.loads((experiment_root / str(outputs["readiness"])).read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise EvaluationError("EVALUATION_OUTPUT_PARTIAL_OR_OCCUPIED") from error
-    validate_readiness(root, policy, packet, markdown, readiness)
+    validate_readiness(experiment_root, project_root, policy, packet, markdown, readiness)
     payload = _decision_payload(
         packet=packet, readiness=readiness, reviewer_id=reviewer_id, disposition=disposition,
         domain_responses=domain_responses, item_responses=item_responses, disputes=disputes,
@@ -484,13 +505,15 @@ def build_review_decision(
     return ReviewDecision(**payload)
 
 
-def validate_review_decision(root: Path, policy: Mapping[str, object], decision: Mapping[str, object]) -> ReviewDecision:
+def validate_review_decision(
+    experiment_root: Path, project_root: Path, policy: Mapping[str, object], decision: Mapping[str, object],
+) -> ReviewDecision:
     """Revalidate both upstream identities and the complete closed response record."""
     if not isinstance(decision, Mapping) or decision.get("schema_version") != _DECISION_SCHEMA:
         _error("REVIEW_DECISION_INVALID")
     _self_hash(decision, "decision_sha256", "REVIEW_DECISION_HASH_INVALID")
     payload = build_review_decision(
-        root, policy, reviewer_id=decision.get("reviewer_id", ""), disposition=decision.get("disposition", ""),
+        experiment_root, project_root, policy, reviewer_id=decision.get("reviewer_id", ""), disposition=decision.get("disposition", ""),
         domain_responses=decision.get("domain_responses", {}), item_responses=decision.get("item_responses", {}),
         disputes=decision.get("disputes", []), d16_acknowledgement=decision.get("d16_acknowledgement", False),
     )
@@ -499,11 +522,13 @@ def validate_review_decision(root: Path, policy: Mapping[str, object], decision:
     return payload
 
 
-def publish_review_decision(root: Path, policy: Mapping[str, object], decision: ReviewDecision, path: str) -> ReviewDecision:
+def publish_review_decision(
+    experiment_root: Path, project_root: Path, policy: Mapping[str, object], decision: ReviewDecision, path: str,
+) -> ReviewDecision:
     """Publish exactly one canonical decision, allowing only byte-identical resume."""
-    validate_review_decision(root, policy, asdict(decision))
+    validate_review_decision(experiment_root, project_root, policy, asdict(decision))
     try:
-        write_exact_descriptor_files(root, {path: canonical_json_bytes(asdict(decision))})
+        write_exact_descriptor_files(experiment_root, {path: canonical_json_bytes(asdict(decision))})
     except FilesystemPolicyError as error:
         raise EvaluationError("REVIEW_DECISION_PARTIAL_OR_OCCUPIED") from error
     return decision

@@ -15,7 +15,11 @@ from specchoice_data.relevance import (
     validate_metamorphic_registry_v1,
     validate_pair_relevance_registry_v1,
 )
-from specchoice_evidence.canonical import canonical_json_bytes, sha256_bytes
+from specchoice_evidence.canonical import (
+    canonical_json_bytes,
+    require_sha256,
+    sha256_bytes,
+)
 from specchoice_evidence.filesystem import (
     FilesystemPolicyError,
     read_authoritative_files,
@@ -59,7 +63,7 @@ _FROZEN_REGISTRY_PATHS = (
     "data/preregistration/split-manifest-v1.json",
     "phase3/data-authority-v1.json",
 )
-_CONSTRUCTION_SOURCES = (
+CONSTRUCTION_SOURCE_CONTRACT = (
     (".planning/phases/05-authorized-execution-and-immutable-evidence/05-00-SUMMARY.md", "completed"),
     (".planning/phases/05-authorized-execution-and-immutable-evidence/05-01-SUMMARY.md", "completed"),
     (".planning/phases/05-authorized-execution-and-immutable-evidence/05-02-CANCELLATION.md", "rejected"),
@@ -1002,19 +1006,38 @@ def build_pairhit_result(
     )
 
 
-def build_construction_feasibility(root: Path) -> tuple[ConstructionAttempt, ...]:
-    """Bind the complete Phase 5 lifecycle without turning it into an experiment."""
-    project_root = root.parents[1]
-    paths = [path for path, _status in _CONSTRUCTION_SOURCES]
+def build_construction_feasibility(
+    experiment_root: Path, project_root: Path, construction_inputs: Sequence[Mapping[str, object]],
+) -> tuple[ConstructionAttempt, ...]:
+    """Build construction evidence only from one declared, project-rooted inventory."""
+    if not isinstance(experiment_root, Path) or not isinstance(project_root, Path):
+        raise EvaluationError("CONSTRUCTION_SOURCE_CONTRACT_INVALID")
+    normalized: list[tuple[str, str, str]] = []
+    for item in construction_inputs:
+        if not isinstance(item, Mapping) or set(item) != {"path", "status", "sha256"}:
+            raise EvaluationError("CONSTRUCTION_SOURCE_CONTRACT_INVALID")
+        path, status, digest = item.get("path"), item.get("status"), item.get("sha256")
+        if not isinstance(path, str) or not isinstance(status, str):
+            raise EvaluationError("CONSTRUCTION_SOURCE_CONTRACT_INVALID")
+        try:
+            normalized.append((path, status, require_sha256(digest)))
+        except ValueError as error:
+            raise EvaluationError("CONSTRUCTION_SOURCE_CONTRACT_INVALID") from error
+    if tuple((path, status) for path, status, _digest in normalized) != CONSTRUCTION_SOURCE_CONTRACT:
+        raise EvaluationError("CONSTRUCTION_SOURCE_CONTRACT_INVALID")
+    paths = [path for path, _status, _digest in normalized]
     try:
         files = read_authoritative_files(project_root, paths)
     except (FilesystemPolicyError, OSError, ValueError) as error:
         raise EvaluationError("CONSTRUCTION_ARTIFACT_INVALID") from error
+    for path, _status, digest in normalized:
+        if sha256_bytes(files[path][1]) != digest:
+            raise EvaluationError("CONSTRUCTION_ARTIFACT_SUBSTITUTED")
     attempts: list[ConstructionAttempt] = []
-    for index, (path, status) in enumerate(_CONSTRUCTION_SOURCES, start=1):
+    for index, (path, status, _digest) in enumerate(normalized, start=1):
         attempt_id = f"construction-{index:02d}"
         predecessor_id = None if index == 1 else f"construction-{index - 1:02d}"
-        successor_id = None if index == len(_CONSTRUCTION_SOURCES) else f"construction-{index + 1:02d}"
+        successor_id = None if index == len(normalized) else f"construction-{index + 1:02d}"
         raw = files[path][1]
         attempts.append(ConstructionAttempt(
             attempt_id, path, sha256_bytes(raw), status, predecessor_id, successor_id,
