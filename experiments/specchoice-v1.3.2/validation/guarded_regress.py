@@ -48,7 +48,30 @@ _REPORT = Path("experiments/specchoice-v1.3.2/reports/red-execution/red-executio
 _SANDBOX_EXEC = Path("/usr/bin/sandbox-exec")
 _FIXED_REGRESSION_ARGV = ("./bin/regress", "--all")
 _PREFLIGHT_TRUE = ("/usr/bin/true",)
-_PREFLIGHT_NETWORK = ("/usr/bin/python3", "-c", "import socket; socket.socket()")
+_PREFLIGHT_NETWORK = (
+    "/usr/bin/python3",
+    "-c",
+    (
+        "import errno, os, socket, sys\n"
+        "s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n"
+        "s.settimeout(1.0)\n"
+        "try:\n"
+        ' s.connect(("127.0.0.1", 0))\n'
+        "except OSError as error:\n"
+        " diagnostic=error.strerror or os.strerror(error.errno)\n"
+        ' print(f"GUARDED_REGRESS_NETWORK_CONNECT_DENIED errno={error.errno} diagnostic={diagnostic}")\n'
+        " sys.exit(77 if error.errno == errno.EPERM and diagnostic == os.strerror(errno.EPERM) else 78)\n"
+        "else:\n"
+        ' print("GUARDED_REGRESS_NETWORK_CONNECT_SUCCEEDED")\n'
+        " sys.exit(79)\n"
+        "finally:\n"
+        " s.close()"
+    ),
+)
+_PREFLIGHT_NETWORK_RETURN_CODE = 77
+_PREFLIGHT_NETWORK_STDOUT = "GUARDED_REGRESS_NETWORK_CONNECT_DENIED errno=1 diagnostic=Operation not permitted\n"
+_MISE_EXECUTABLE_NAME = "mise-2026.7.5"
+_MISE_CONFIG = Path(".mise.toml")
 _PREFLIGHT_WRITE = (
     "/usr/bin/python3",
     "-c",
@@ -170,6 +193,41 @@ def _offline_environment() -> dict[str, str]:
     return environment
 
 
+def _default_mise_path() -> Path:
+    return Path.home() / ".cache" / "mise" / _MISE_EXECUTABLE_NAME
+
+
+def _require_mise_toolchain(repo_root: Path, mise_path: Path | None) -> tuple[Path, Path]:
+    mise = _default_mise_path() if mise_path is None else mise_path
+    config = repo_root / _MISE_CONFIG
+    try:
+        mise_mode = os.stat(mise).st_mode
+        config_mode = os.stat(config).st_mode
+    except FileNotFoundError as error:
+        raise GuardedRegressError("GUARDED_REGRESS_MISE_TOOLCHAIN_UNAVAILABLE") from error
+    if (
+        mise.is_symlink()
+        or config.is_symlink()
+        or not stat.S_ISREG(mise_mode)
+        or not stat.S_ISREG(config_mode)
+        or not os.access(mise, os.X_OK)
+    ):
+        raise GuardedRegressError("GUARDED_REGRESS_MISE_TOOLCHAIN_UNAVAILABLE")
+    return mise, config
+
+
+def _mise_environment(repo_root: Path, mise: Path, config: Path) -> dict[str, str]:
+    environment = _offline_environment()
+    environment.update(
+        {
+            "XDG_CACHE_HOME": str(mise.parent.parent),
+            "MISE_CONFIG_FILE": str(config),
+            "MISE_PROJECT_ROOT": str(repo_root),
+        }
+    )
+    return environment
+
+
 def _require_exact_guard(guard_path: Path) -> Path:
     if guard_path != _SANDBOX_EXEC:
         raise GuardedRegressError("GUARDED_REGRESS_NATIVE_GUARD_UNAVAILABLE")
@@ -191,11 +249,13 @@ def preflight_native_guard(
     *,
     runner: Runner = _run_process,
     guard_path: Path = _SANDBOX_EXEC,
+    mise_path: Path | None = None,
 ) -> str:
     """Require a working native guard plus enforced network and write denials."""
     root = _absolute_repo_root(repo_root)
     guard = _require_exact_guard(guard_path)
-    environment = _offline_environment()
+    mise, config = _require_mise_toolchain(root, mise_path)
+    environment = _mise_environment(root, mise, config)
     with tempfile.TemporaryDirectory(prefix="guarded-regress-") as directory:
         probe_root = Path(directory)
         profile = build_sandbox_profile(root, probe_root)
@@ -203,8 +263,17 @@ def preflight_native_guard(
         if harmless.returncode != 0:
             raise GuardedRegressError("GUARDED_REGRESS_NATIVE_GUARD_NONFUNCTIONAL")
         network = runner(_guard_argv(guard, profile, _PREFLIGHT_NETWORK), root, environment)
-        if network.returncode == 0:
+        if (
+            network.returncode != _PREFLIGHT_NETWORK_RETURN_CODE
+            or network.stdout != _PREFLIGHT_NETWORK_STDOUT
+            or network.stderr != ""
+        ):
             raise GuardedRegressError("GUARDED_REGRESS_NETWORK_PROBE_NOT_DENIED")
+        toolchain = runner(
+            _guard_argv(guard, profile, (str(mise), "exec", "--", "bundle", "--version")), root, environment
+        )
+        if toolchain.returncode != 0:
+            raise GuardedRegressError("GUARDED_REGRESS_MISE_TOOLCHAIN_UNAVAILABLE")
         sentinel = probe_root / "protected-sentinel"
         write = runner(_guard_argv(guard, profile, (*_PREFLIGHT_WRITE, str(sentinel))), root, environment)
         if write.returncode == 0 or sentinel.exists():
@@ -217,12 +286,18 @@ def run_guarded_command(
     *,
     runner: Runner = _run_process,
     guard_path: Path = _SANDBOX_EXEC,
+    mise_path: Path | None = None,
 ) -> GuardedRun:
     """Run only the fixed regression argv after admission, then compare snapshots."""
     root = _absolute_repo_root(repo_root)
     before = snapshot_v2_evidence(root)
-    profile = preflight_native_guard(root, runner=runner, guard_path=guard_path)
-    result = runner(_guard_argv(_require_exact_guard(guard_path), profile, _FIXED_REGRESSION_ARGV), root, _offline_environment())
+    profile = preflight_native_guard(root, runner=runner, guard_path=guard_path, mise_path=mise_path)
+    mise, config = _require_mise_toolchain(root, mise_path)
+    result = runner(
+        _guard_argv(_require_exact_guard(guard_path), profile, _FIXED_REGRESSION_ARGV),
+        root,
+        _mise_environment(root, mise, config),
+    )
     record = GuardedRun(
         argv=_FIXED_REGRESSION_ARGV,
         returncode=result.returncode,
