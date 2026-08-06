@@ -373,7 +373,7 @@ Plans:
   4. PairHit@K is reported only for preregistered relevance judgments, with retrieved pair IDs per case; strict, auxiliary, metamorphic, and repeat-disagreement outputs retain separate IDs and denominators.
   5. On Red, the reviewer receives only the deterministic measurement and construction-feasibility evaluation, with no absent model outputs presented as experimental zeros or extraction evidence.
 
-**Plans:** 9/14 plans executed
+**Plans:** 10/14 plans executed
 
 Plans:
 
@@ -393,7 +393,7 @@ Plans:
 - 06-10-PLAN.md — superseded unexecuted; a generation-002 decision must not be created.
 - [x] 06-11-PLAN.md — preserve generation-002 failed/incomplete custody, add all generation-003 recovery tests before freeze, and freeze the tested generation-003 policy.
 - [x] 06-12-PLAN.md — publish, independently verify, exact-resume, and adversarially validate the decision-free generation-003 package.
-- [ ] 06-13-PLAN.md — obtain the only new human decision checkpoint over exact generation-003 hashes.
+- [x] 06-13-PLAN.md — obtain the only new human decision checkpoint over exact generation-003 hashes.
 - [ ] 06-14-PLAN.md — publish the canonical generation-003 decision and derive bounded closure or still-open status.
 
 **Wave 1**
@@ -436,7 +436,7 @@ Plans:
 
 **Wave 11** *(blocked on Wave 10 completion)*
 
-- [ ] 06-12: Publish, verify, exact-resume, and adversarially validate the generation-003 packet/report/readiness set without a decision.
+- [x] 06-12: Publish, verify, exact-resume, and adversarially validate the generation-003 packet/report/readiness set without a decision.
 
 **Wave 12** *(blocked on Wave 11 completion)*
 
@@ -510,5 +510,5 @@ Plans:
 | 3. Human-Reviewed Data Preregistration | 4/4 | Complete   | 2026-08-04 |
 | 4. Offline Treatments, Retrieval, and Branch Freeze | 4/4 | Complete    | 2026-08-04 |
 | 5. Authorized Execution and Immutable Evidence | 6/6 | Complete   | 2026-08-06 |
-| 6. Partition-Aware Ablation and Metamorphic Evaluation | 9/14 | In Progress|  |
+| 6. Partition-Aware Ablation and Metamorphic Evaluation | 10/14 | In Progress|  |
 | 7. Reproducible Feasibility Conclusion | 0/3 | Not started | - |
