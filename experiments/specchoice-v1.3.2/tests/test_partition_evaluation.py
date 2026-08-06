@@ -140,19 +140,19 @@ class PartitionEvaluationTests(unittest.TestCase):
             "evidence_spans", "treatment", "repeat",
         )}
         good = self._row(treatment="B")
-        closed = close_join("evaluation", "strict", "case-1", bindings, [good])
+        closed = close_join("evaluation", "strict", "case-1", bindings, [good], expected_bindings=bindings)
         self.assertEqual("closed", closed.status)
         self.assertEqual((), closed.diagnostics)
-        self.assertEqual(closed.join_sha256, close_join("evaluation", "strict", "case-1", bindings, [good]).join_sha256)
+        self.assertEqual(closed.join_sha256, close_join("evaluation", "strict", "case-1", bindings, [good], expected_bindings=bindings).join_sha256)
         for changed in (
             {key: value for key, value in bindings.items() if key != "prompt"},
             {**bindings, "unexpected": self._binding("unexpected")},
         ):
-            invalid = close_join("evaluation", "strict", "case-1", changed, [good])
+            invalid = close_join("evaluation", "strict", "case-1", changed, [good], expected_bindings=bindings)
             self.assertEqual("invalid_withheld", invalid.status)
             self.assertTrue(invalid.diagnostics)
-        duplicate = close_join("evaluation", "strict", "case-1", bindings, [good, good])
-        cross_partition = close_join("evaluation", "strict", "case-1", bindings, [good, self._row(treatment="A", partition="auxiliary")])
+        duplicate = close_join("evaluation", "strict", "case-1", bindings, [good, good], expected_bindings=bindings)
+        cross_partition = close_join("evaluation", "strict", "case-1", bindings, [good, self._row(treatment="A", partition="auxiliary")], expected_bindings=bindings)
         self.assertEqual("invalid_withheld", duplicate.status)
         self.assertEqual("invalid_withheld", cross_partition.status)
 

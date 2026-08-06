@@ -200,6 +200,15 @@ class ClosedJoinManifest:
 
 
 @dataclass(frozen=True)
+class VerifiedJoinReference:
+    """One atomic row with the exact closed join admitted by the policy."""
+
+    row: AtomicResultRow
+    manifest: ClosedJoinManifest
+    expected_join_sha256: str
+
+
+@dataclass(frozen=True)
 class PairwiseComparison:
     """A treatment-specific, independently denominated complete-pair result."""
 
@@ -602,14 +611,30 @@ def close_join(
     case_id: str,
     bindings: Mapping[str, ArtifactBinding],
     rows: Sequence[AtomicResultRow],
+    *,
+    expected_bindings: Mapping[str, ArtifactBinding],
 ) -> ClosedJoinManifest:
     """Close one case only when all D-08 identities are exact and complete."""
     binding_map = dict(bindings)
+    expected_binding_map = dict(expected_bindings)
     diagnostics: list[Diagnostic] = []
-    if set(binding_map) != set(_ARTIFACT_ROLES):
+    if (
+        set(binding_map) != set(_ARTIFACT_ROLES)
+        or not all(isinstance(binding, ArtifactBinding) for binding in binding_map.values())
+    ):
         diagnostics.append(_diagnostic("CLOSED_JOIN_ARTIFACT_SET_INVALID", "join.artifacts"))
     elif not all(binding_map[role].applicable for role in _ARTIFACT_ROLES):
         diagnostics.append(_diagnostic("CLOSED_JOIN_ARTIFACT_INAPPLICABLE", "join.artifacts"))
+    if (
+        set(expected_binding_map) != set(_ARTIFACT_ROLES)
+        or not all(isinstance(binding, ArtifactBinding) for binding in expected_binding_map.values())
+    ):
+        diagnostics.append(_diagnostic("CLOSED_JOIN_EXPECTED_BINDINGS_INVALID", "join.expected_bindings"))
+    elif set(binding_map) == set(_ARTIFACT_ROLES) and any(
+        binding_map[role].as_dict() != expected_binding_map[role].as_dict()
+        for role in _ARTIFACT_ROLES
+    ):
+        diagnostics.append(_diagnostic("CLOSED_JOIN_BINDING_SUBSTITUTED", "join.expected_bindings"))
 
     row_ids = tuple(sorted(row.identity() for row in rows))
     if len(row_ids) != len(set(row_ids)):
@@ -646,8 +671,30 @@ def close_join(
     )
 
 
+def _valid_verified_join_reference(reference: object) -> bool:
+    if not isinstance(reference, VerifiedJoinReference):
+        return False
+    row, manifest = reference.row, reference.manifest
+    if (
+        manifest.status != "closed"
+        or manifest.diagnostics
+        or manifest.join_id != f"join.{row.authority_domain}.{row.partition}.{row.case_id}"
+        or manifest.authority_domain != row.authority_domain
+        or manifest.partition != row.partition
+        or manifest.case_id != row.case_id
+        or manifest.row_ids != (row.identity(),)
+        or manifest.join_sha256 != reference.expected_join_sha256
+    ):
+        return False
+    try:
+        require_sha256(reference.expected_join_sha256)
+    except ValueError:
+        return False
+    return True
+
+
 def build_pairwise_comparison(
-    rows: Sequence[AtomicResultRow],
+    references: Sequence[VerifiedJoinReference],
     comparison_id: str,
     control_projections: Mapping[tuple[str, str, str, str, str, str], Mapping[str, object]],
     *,
@@ -663,7 +710,7 @@ def build_pairwise_comparison(
     left_treatment, right_treatment, intervention = contracts[comparison_id]
     bindings = dict(authority_bindings or {})
     population_id = f"pairwise.{comparison_id}"
-    if not rows:
+    if not references:
         population_sha256 = sha256_bytes(canonical_json_bytes({"comparison_id": comparison_id, "state": "not_applicable_red"}))
         return PairwiseComparison(
             comparison_id, left_treatment, right_treatment, intervention, population_id,
@@ -671,34 +718,39 @@ def build_pairwise_comparison(
         )
 
     groups: dict[tuple[str, str, str, str], dict[str, AtomicResultRow]] = {}
-    invalid = False
-    for row in rows:
+    invalid_join = False
+    invalid_control = False
+    for reference in references:
+        if not _valid_verified_join_reference(reference):
+            invalid_join = True
+            continue
+        row = reference.row
         if not row.treatment.applicable or not row.repeat_id.applicable:
-            invalid = True
+            invalid_join = True
             continue
         key = (row.authority_domain, row.partition, row.case_id, row.repeat_id.value or "")
         treatment = row.treatment.value or ""
         if treatment not in {left_treatment, right_treatment} or treatment in groups.setdefault(key, {}):
-            invalid = True
+            invalid_join = True
             continue
         groups[key][treatment] = row
     paired = []
     for key in sorted(groups):
         pair = groups[key]
         if set(pair) != {left_treatment, right_treatment}:
-            invalid = True
+            invalid_join = True
             continue
         left, right = pair[left_treatment], pair[right_treatment]
         left_controls = control_projections.get(left.identity())
         right_controls = control_projections.get(right.identity())
         if not isinstance(left_controls, Mapping) or not isinstance(right_controls, Mapping):
-            invalid = True
+            invalid_control = True
             continue
         if set(left_controls) != set(right_controls) or any(
             left_controls[name] != right_controls[name]
             for name in left_controls if name != intervention
         ):
-            invalid = True
+            invalid_control = True
             continue
         paired.append((left, right))
 
@@ -709,7 +761,12 @@ def build_pairwise_comparison(
         "paired_row_ids": [[list(left), list(right)] for left, right in paired_ids],
     }
     population_sha256 = sha256_bytes(canonical_json_bytes(basis))
-    if invalid or not paired:
+    if invalid_join:
+        paired_ids = ()
+        diagnostic = _diagnostic("PAIRWISE_JOIN_REFERENCE_INVALID", comparison_id)
+        result = MetricResult(comparison_id, "invalid_withheld", bindings, blocking_diagnostics=(diagnostic,))
+    elif invalid_control or not paired:
+        paired_ids = ()
         diagnostic = _diagnostic("PAIRWISE_CONTROL_OR_CLOSURE_INVALID", comparison_id)
         result = MetricResult(comparison_id, "invalid_withheld", bindings, blocking_diagnostics=(diagnostic,))
     else:
