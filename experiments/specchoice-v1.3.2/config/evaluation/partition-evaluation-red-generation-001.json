@@ -78,7 +78,7 @@
         "b_minus_a",
         "c_minus_b",
         "classify_out",
-        "disposition",
+        "classification_outcome",
         "evidence_integrity",
         "frame_authority",
         "frame_choice_object",
@@ -102,7 +102,7 @@
         "packet": "runs/partition-evaluation-red-generation-001/evaluation-packet.json",
         "readiness": "receipts/partition-evaluation-red-generation-001-readiness.json"
     },
-    "policy_sha256": "a7e985607fc0d334ca794eb0f6904738814e544afebc048390a914441731f9c5",
+    "policy_sha256": "bdf6c6b05f9f99827107f69cad2f55963a5923d4b209665e5cbdd707ce0756a5",
     "repeat_count": 0,
     "runtime_closure": {
         "path": "receipts/runtime-executable-closure-v4.json",
