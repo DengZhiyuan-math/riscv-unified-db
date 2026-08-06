@@ -4,15 +4,15 @@ milestone: v1.3.2
 milestone_name: milestone
 current_phase: 05
 current_phase_name: authorized-execution-and-immutable-evidence
-status: complete
-stopped_at: Phase 6 context gathered; Phase 5 remains the active dependency
-last_updated: "2026-08-05T21:57:06.366Z"
-last_activity: 2026-08-05
-last_activity_desc: Completed Phase 05 terminal validation successor at local commit `1d83a6cc`.
+status: ready_to_execute
+stopped_at: 05-09 gap-closure plan is ready; it must establish durable v2 custody and the explicit v2-to-v3 successor mapping before Phase 5 can be re-verified
+last_updated: "2026-08-06T08:12:07.350Z"
+last_activity: 2026-08-06
+last_activity_desc: Planned 05-09 to close the verifier's immutable-custody and forward-mapping gaps without changing existing evidence.
 progress:
   total_phases: 7
-  completed_phases: 4
-  total_plans: 42
+  completed_phases: 3
+  total_plans: 43
   completed_plans: 37
   percent: 57
 ---
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-30)
 
 **Core value:** Produce a reproducible, leakage-safe, falsifiable A/B/C result—positive, negative, or Red-path infeasible—without weakening gold semantics, deterministic measurement, or human control of RISC-V judgments.
-**Current focus:** Phase 05 complete; Phase 06 is the next unstarted phase.
+**Current focus:** Phase 05 gap closure; Phase 06 remains blocked pending independent re-verification.
 
 ## Current Position
 
-Phase: 05 (authorized-execution-and-immutable-evidence) — COMPLETE
-Plan: 5 of 5 active discoverable plans complete (05-00, 05-01, 05-04, 05-05, and 05-08); 05-02 is rejected, 05-03 is superseded, and partial 05-06/05-07 remain failed-closed historical records without summaries
-Status: The v3 05-08 successor preserved all historical custody, validated the three-tool source port, published exactly six no-replace local cache leaves, proved formal Red exact-resume zero writes, completed two guarded full regressions, and created attempt-04 SHA-256 `3bf0c8fcee446111ea1dd93a3cc6cf6f6dedb630f55bb93c8852cfd3707d3f15` in `validation_complete`. It grants no model, Green/Yellow, publication, or final-conclusion authority.
-Last activity: 2026-08-05 — Completed Phase 05 terminal validation successor at local commit `1d83a6cc`.
+Phase: 05 (authorized-execution-and-immutable-evidence) — READY TO EXECUTE GAP CLOSURE
+Plan: 5 of 6 active discoverable plans complete (05-00, 05-01, 05-04, 05-05, and 05-08); 05-09 is the sole pending gap-closure plan. 05-02 is rejected, 05-03 is superseded, and partial 05-06/05-07 remain failed-closed historical records without summaries.
+Status: `05-VERIFICATION.md` found that the exact v2 failed-closed root is untracked and that committed v3 successor records are not forward-mapped into the 05-08 declared custody contract. 05-09 may add only durable custody for the identical root and a canonical non-authoritative v2-to-v3 mapping successor, then request independent re-verification. Phase 6 remains blocked; no model, Green/Yellow, publication, metric, or final-conclusion authority is granted.
+Last activity: 2026-08-06 — Created and independently plan-checked 05-09 gap closure.
 
-Progress: [██████████] 100% of active discoverable Phase 5 plans complete
+Progress: [████████░░] 83% of active discoverable Phase 5 plans complete
 
 ## Performance Metrics
 
