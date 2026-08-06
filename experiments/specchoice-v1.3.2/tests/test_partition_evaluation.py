@@ -41,7 +41,11 @@ from specchoice_evaluation.core import (
 from specchoice_evaluation.review import (
     build_evaluation_packet,
     build_readiness,
+    publish_evaluation_package,
     render_evaluation_markdown,
+    validate_evaluation_packet,
+    validate_evaluation_policy,
+    validate_readiness,
 )
 from specchoice_evidence.canonical import canonical_json_bytes
 
@@ -246,6 +250,47 @@ class PartitionEvaluationTests(unittest.TestCase):
             self.assertEqual("red", json.loads(stdout.getvalue())["branch"])
         finally:
             policy.unlink()
+
+    def test_packet_readiness_are_decision_free_and_hash_bound(self) -> None:
+        policy_path = EXPERIMENT / "config/evaluation/partition-evaluation-red-generation-001.json"
+        policy = json.loads(policy_path.read_text(encoding="utf-8"))
+        validate_evaluation_policy(EXPERIMENT, policy)
+        packet = build_evaluation_packet(build_red_evaluation(EXPERIMENT), policy=policy)
+        markdown = render_evaluation_markdown(packet)
+        readiness = build_readiness(packet, policy=policy, markdown=markdown)
+        validate_evaluation_packet(EXPERIMENT, policy, packet)
+        validate_readiness(EXPERIMENT, policy, packet, markdown, readiness)
+        for value in (packet, readiness):
+            rendered = canonical_json_bytes(value).decode("utf-8")
+            for forbidden in ("reviewer", "disposition", "decision", "approval"):
+                self.assertNotIn(forbidden, rendered)
+        self.assertFalse(packet["conclusion_ready"])
+        self.assertFalse(readiness["conclusion_ready"])
+        self.assertTrue(readiness["ready_for_human_review"])
+        self.assertTrue(markdown.startswith(b"# Red authority\n"))
+
+    def test_exact_resume_rejects_partial_different_or_substituted_inputs(self) -> None:
+        policy_path = EXPERIMENT / "config/evaluation/partition-evaluation-red-generation-001.json"
+        policy = json.loads(policy_path.read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "experiment"
+            shutil.copytree(EXPERIMENT, root, ignore=shutil.ignore_patterns("__pycache__"))
+            packet, markdown, readiness = publish_evaluation_package(root, policy)
+            expected = {
+                policy["outputs"]["packet"]: canonical_json_bytes(packet),
+                policy["outputs"]["markdown"]: markdown,
+                policy["outputs"]["readiness"]: canonical_json_bytes(readiness),
+            }
+            self.assertEqual((packet, markdown, readiness), publish_evaluation_package(root, policy))
+            (root / policy["outputs"]["packet"]).unlink()
+            with self.assertRaisesRegex(Exception, "EVALUATION_OUTPUT_PARTIAL_OR_OCCUPIED"):
+                publish_evaluation_package(root, policy)
+            self.assertFalse((root / policy["outputs"]["packet"]).exists())
+            (root / policy["outputs"]["markdown"]).write_bytes(b"different")
+            with self.assertRaisesRegex(Exception, "EVALUATION_OUTPUT_PARTIAL_OR_OCCUPIED"):
+                publish_evaluation_package(root, policy)
+            self.assertEqual(b"different", (root / policy["outputs"]["markdown"]).read_bytes())
+            self.assertEqual(expected[policy["outputs"]["readiness"]], (root / policy["outputs"]["readiness"]).read_bytes())
 
     def test_result_states_and_population_order_are_not_interchangeable(self) -> None:
         first = build_population_manifest("test.population", "formal", ["case-b", "case-a"])
