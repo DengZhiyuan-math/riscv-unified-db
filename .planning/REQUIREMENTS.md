@@ -43,16 +43,16 @@ Requirements for the frozen SpecChoice v1.3.2 execution baseline. Each maps to e
 ### H1 — DelegationFrame Effect
 
 - [x] **H1-01** `[G/Y]`: For systems B and C, the reviewer receives exactly the three required DelegationFrame axes—`authority`, `choice_object`, and `choice_space_origin`—using frozen enums, permitting `unknown`, and carrying a verbatim evidence span for each axis.
-- [ ] **H1-02** `[G/Y]`: The reviewer can compare paired B-minus-A case outcomes where A and B use the same two fixed complete contrastive pairs and all shared controls, with the DelegationFrame as the intended intervention.
+- [x] **H1-02** `[G/Y]`: The reviewer can compare paired B-minus-A case outcomes where A and B use the same two fixed complete contrastive pairs and all shared controls, with the DelegationFrame as the intended intervention.
 - [x] **H1-03** `[G/Y]`: The reviewer receives separate accuracy for all three frame axes and frozen `FRAME_COMBINATION_REQUIRES_REVIEW` warnings that remain non-blocking and cannot alter axis or disposition correctness.
-- [ ] **H1-04** `[G/Y]`: The reviewer can determine whether the frame changes shortcut-family errors and required metamorphic directions without post-hoc prompt, label, family, or threshold changes.
+- [x] **H1-04** `[G/Y]`: The reviewer can determine whether the frame changes shortcut-family errors and required metamorphic directions without post-hoc prompt, label, family, or threshold changes.
 
 ### H2 — Axis-Contrastive Retrieval Effect
 
 - [x] **H2-01** `[G/Y]`: The human reviewer can approve a bank of complete contrastive pairs in which each unit records positive and contrast passages, shared structure, frames, final statuses, discriminating axes, evidence spans, source provenance, and manual verification, without fabricated quota-filling pairs.
 - [x] **H2-02** `[G/Y]`: The operator can retrieve exactly two complete pairs per controlled target using frozen TF-IDF and cosine-similarity settings, deterministic `pair_id` tie-breaking, target-dependent rankings, and no embeddings, vector database, learned retriever, or learned reranker.
 - [ ] **H2-03** `[G/Y]`: The reviewer can inspect a versioned and hashed relevance registry frozen before retrieval, per-case retrieved pair IDs, and `PairHit@K` calculated only for cases with preregistered human relevance judgments.
-- [ ] **H2-04** `[G/Y]`: The reviewer can compare paired C-minus-B outcomes where B and C share the identical frame, adjudication, context, evidence, model, pair-count, and repeat controls, with complete-pair selection method as the only intended intervention.
+- [x] **H2-04** `[G/Y]`: The reviewer can compare paired C-minus-B outcomes where B and C share the identical frame, adjudication, context, evidence, model, pair-count, and repeat controls, with complete-pair selection method as the only intended intervention.
 
 ## Acceptance Criteria
 
@@ -146,13 +146,13 @@ Roadmap creation maps every v1 requirement to exactly one phase.
 | TS-14 | Phase 7 | Pending |
 | TS-15 | Phase 7 | Pending |
 | H1-01 | Phase 4 | Complete |
-| H1-02 | Phase 6 | Pending |
+| H1-02 | Phase 6 | Complete |
 | H1-03 | Phase 6 | Complete |
-| H1-04 | Phase 6 | Pending |
+| H1-04 | Phase 6 | Complete |
 | H2-01 | Phase 3 | Complete |
 | H2-02 | Phase 4 | Complete |
 | H2-03 | Phase 6 | Pending |
-| H2-04 | Phase 6 | Pending |
+| H2-04 | Phase 6 | Complete |
 
 **Coverage:**
 

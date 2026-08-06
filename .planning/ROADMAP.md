@@ -373,7 +373,7 @@ Plans:
   4. PairHit@K is reported only for preregistered relevance judgments, with retrieved pair IDs per case; strict, auxiliary, metamorphic, and repeat-disagreement outputs retain separate IDs and denominators.
   5. On Red, the reviewer receives only the deterministic measurement and construction-feasibility evaluation, with no absent model outputs presented as experimental zeros or extraction evidence.
 
-**Plans:** 6/10 plans executed
+**Plans:** 7/10 plans executed
 
 Plans:
 
@@ -383,7 +383,7 @@ Plans:
 - [x] 06-04-PLAN.md
 - [x] 06-05-PLAN.md
 - [x] 06-06-PLAN.md
-- [ ] 06-07-PLAN.md
+- [x] 06-07-PLAN.md
 - [ ] 06-08-PLAN.md
 - [ ] 06-09-PLAN.md
 - [ ] 06-10-PLAN.md
@@ -489,5 +489,5 @@ Plans:
 | 3. Human-Reviewed Data Preregistration | 4/4 | Complete   | 2026-08-04 |
 | 4. Offline Treatments, Retrieval, and Branch Freeze | 4/4 | Complete    | 2026-08-04 |
 | 5. Authorized Execution and Immutable Evidence | 6/6 | Complete   | 2026-08-06 |
-| 6. Partition-Aware Ablation and Metamorphic Evaluation | 6/10 | In Progress|  |
+| 6. Partition-Aware Ablation and Metamorphic Evaluation | 7/10 | In Progress|  |
 | 7. Reproducible Feasibility Conclusion | 0/3 | Not started | - |
