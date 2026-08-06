@@ -9,6 +9,7 @@ import shutil
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from dataclasses import asdict
 from pathlib import Path
 
 from specchoice_evaluation.cli import main
@@ -24,9 +25,9 @@ from specchoice_evaluation.core import (
     RepeatComparison,
     RepeatObservation,
     WarningRecord,
+    build_construction_feasibility,
     build_failure_ledger,
     build_frame_axis_results,
-    build_construction_feasibility,
     build_pairhit_result,
     build_pairwise_comparison,
     build_population_manifest,
@@ -41,11 +42,13 @@ from specchoice_evaluation.core import (
 from specchoice_evaluation.review import (
     build_evaluation_packet,
     build_readiness,
+    build_review_decision,
     publish_evaluation_package,
     render_evaluation_markdown,
     validate_evaluation_packet,
     validate_evaluation_policy,
     validate_readiness,
+    validate_review_decision,
 )
 from specchoice_evidence.canonical import canonical_json_bytes
 
@@ -268,6 +271,24 @@ class PartitionEvaluationTests(unittest.TestCase):
         self.assertFalse(readiness["conclusion_ready"])
         self.assertTrue(readiness["ready_for_human_review"])
         self.assertTrue(markdown.startswith(b"# Red authority\n"))
+
+    def test_review_decision_requires_exact_hashes_and_closed_responses(self) -> None:
+        policy_path = EXPERIMENT / "config/evaluation/partition-evaluation-red-generation-001.json"
+        policy = json.loads(policy_path.read_text(encoding="utf-8"))
+        rows = json.loads((EXPERIMENT / policy["outputs"]["packet"]).read_text())["case_rows"]
+        domains = {row["authority_domain"]: "approved" for row in rows}
+        items = {row["outcome_id"]: "approved" for row in rows}
+        decision = build_review_decision(
+            EXPERIMENT, policy, reviewer_id="Zhiyuan Deng", disposition="approved",
+            domain_responses=domains, item_responses=items, disputes=[], d16_acknowledgement=True,
+        )
+        self.assertTrue(decision.conclusion_ready)
+        self.assertTrue(decision.phase7_interpretation_authorized)
+        self.assertEqual(decision, validate_review_decision(EXPERIMENT, policy, asdict(decision)))
+        changed = asdict(decision)
+        changed["packet_sha256"] = "0" * 64
+        with self.assertRaisesRegex(Exception, "REVIEW_DECISION_HASH_INVALID"):
+            validate_review_decision(EXPERIMENT, policy, changed)
 
     def test_exact_resume_rejects_partial_different_or_substituted_inputs(self) -> None:
         policy_path = EXPERIMENT / "config/evaluation/partition-evaluation-red-generation-001.json"
