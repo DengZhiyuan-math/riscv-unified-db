@@ -331,7 +331,7 @@ class PartitionEvaluationTests(unittest.TestCase):
                 build_construction_feasibility(copied, copied_project, policy["construction_inputs"])
 
     def test_forged_rehashed_packet_is_rejected_by_root_derivation(self) -> None:
-        policy = self._generation_two_policy()
+        policy = self._generation_three_policy()
         packet = build_evaluation_packet(
             build_red_evaluation(EXPERIMENT),
             policy=policy,
@@ -358,18 +358,18 @@ class PartitionEvaluationTests(unittest.TestCase):
     def test_each_declared_construction_source_is_policy_bound(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             project, experiment = self._copy_project(directory)
-            policy = self._generation_two_policy(experiment, project)
+            policy = self._generation_three_policy(experiment, project)
             for source in policy["construction_inputs"]:
                 path = project / str(source["path"])
                 original = path.read_bytes()
                 path.write_bytes(original + b"\nconstruction-tamper\n")
-                with self.assertRaisesRegex(Exception, "CONSTRUCTION_ARTIFACT_SUBSTITUTED"):
+                with self.assertRaisesRegex(Exception, "(CONSTRUCTION_ARTIFACT_SUBSTITUTED|EVALUATION_POLICY_INPUT_SUBSTITUTED)"):
                     validate_evaluation_policy(experiment, project, policy)
                 self.assertFalse((experiment / policy["outputs"]["packet"]).exists())
                 path.write_bytes(original)
 
     def test_construction_source_declaration_is_exact(self) -> None:
-        policy = self._generation_two_policy()
+        policy = self._generation_three_policy()
         for changed in (
             policy["construction_inputs"][:-1],
             [*policy["construction_inputs"], policy["construction_inputs"][-1]],
@@ -403,7 +403,8 @@ class PartitionEvaluationTests(unittest.TestCase):
 
     def test_generation_002_policy_freezes_fixed_code_construction_and_predecessor(self) -> None:
         policy = self._generation_two_policy()
-        validate_evaluation_policy(EXPERIMENT, PROJECT, policy)
+        with self.assertRaisesRegex(Exception, "EVALUATION_POLICY_INPUT_SUBSTITUTED"):
+            validate_evaluation_policy(EXPERIMENT, PROJECT, policy)
         self.assertEqual("partition-evaluation-red-generation-002", policy["generation_id"])
         self.assertEqual(19, len(policy["construction_inputs"]))
         source_paths = (
@@ -581,7 +582,7 @@ class PartitionEvaluationTests(unittest.TestCase):
                 publish_review_decision(experiment, project, policy, decision, decision_path)
 
     def test_component_inventory_is_exact_and_live(self) -> None:
-        policy = self._generation_two_policy()
+        policy = self._generation_three_policy()
         for component_ids in (
             policy["component_ids"][:-1],
             [*policy["component_ids"], "unexpected"],
@@ -612,7 +613,7 @@ class PartitionEvaluationTests(unittest.TestCase):
                 validate_evaluation_packet(EXPERIMENT, PROJECT, policy, candidate)
 
     def test_runtime_policy_error_is_stable_and_traceback_free(self) -> None:
-        policy = self._generation_two_policy()
+        policy = self._generation_three_policy()
         policy["inputs"] = [
             item for item in policy["inputs"]
             if item["path"] != policy["runtime_closure"]["path"]
@@ -692,7 +693,7 @@ class PartitionEvaluationTests(unittest.TestCase):
             policy.unlink()
 
     def test_packet_readiness_are_decision_free_and_hash_bound(self) -> None:
-        policy = self._generation_two_policy()
+        policy = self._generation_three_policy()
         validate_evaluation_policy(EXPERIMENT, PROJECT, policy)
         packet = build_evaluation_packet(
             build_red_evaluation(EXPERIMENT), policy=policy,
@@ -714,7 +715,7 @@ class PartitionEvaluationTests(unittest.TestCase):
     def test_review_decision_requires_exact_hashes_and_closed_responses(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             project, experiment = self._copy_project(directory)
-            policy = self._generation_two_policy(experiment, project)
+            policy = self._generation_three_policy(experiment, project)
             packet, _markdown, _readiness = publish_evaluation_package(experiment, project, policy)
             domains = {row["authority_domain"]: "approved" for row in packet["case_rows"]}
             items = {row["outcome_id"]: "approved" for row in packet["case_rows"]}
@@ -733,7 +734,7 @@ class PartitionEvaluationTests(unittest.TestCase):
     def test_exact_resume_rejects_partial_different_or_substituted_inputs(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             project, root = self._copy_project(directory)
-            policy = self._generation_two_policy(root, project)
+            policy = self._generation_three_policy(root, project)
             packet, markdown, readiness = publish_evaluation_package(root, project, policy)
             expected = {
                 policy["outputs"]["packet"]: canonical_json_bytes(packet),
