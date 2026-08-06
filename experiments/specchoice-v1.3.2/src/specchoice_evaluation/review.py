@@ -47,6 +47,17 @@ _DECISION_LIMITS = {
     "retrieval_authorized": False,
     "subprocess_authorized": False,
 }
+EXPECTED_COMPONENT_IDS = (
+    "applicability",
+    "atomic_rows",
+    "construction",
+    "deterministic_measurement",
+    "failures",
+    "metrics",
+    "populations",
+    "red_execution_evidence",
+    "warnings",
+)
 
 
 @dataclass(frozen=True)
@@ -146,7 +157,7 @@ def validate_evaluation_policy(experiment_root: Path, project_root: Path, policy
     if tuple(policy.get("metric_ids", ())) != _PACKET_METRIC_IDS:
         _error("EVALUATION_POLICY_METRICS_INVALID")
     component_ids = policy.get("component_ids")
-    if not isinstance(component_ids, list) or tuple(sorted(component_ids)) != tuple(component_ids):
+    if not isinstance(component_ids, list) or tuple(component_ids) != EXPECTED_COMPONENT_IDS:
         _error("EVALUATION_POLICY_COMPONENTS_INVALID")
     runtime = policy.get("runtime_closure")
     if not isinstance(runtime, Mapping) or runtime.get("path") != "receipts/runtime-executable-closure-v4.json":
@@ -188,6 +199,9 @@ def validate_evaluation_policy(experiment_root: Path, project_root: Path, policy
     for item in normalized:
         if sha256_bytes(files[str(item["path"])][1]) != item["sha256"]:
             _error("EVALUATION_POLICY_INPUT_SUBSTITUTED")
+    matching_runtime_inputs = [item for item in normalized if item["path"] == runtime["path"]]
+    if len(matching_runtime_inputs) != 1 or matching_runtime_inputs[0]["sha256"] != runtime["sha256"]:
+        _error("EVALUATION_POLICY_RUNTIME_INVALID")
     if sha256_bytes(files[str(runtime["path"])][1]) != runtime["sha256"]:
         _error("EVALUATION_POLICY_RUNTIME_INVALID")
     build_construction_feasibility(experiment_root, project_root, policy.get("construction_inputs", ()))
@@ -250,8 +264,15 @@ def validate_evaluation_packet(
     if packet.get("conclusion_ready") is not False or packet.get("complete") is not True:
         _error("EVALUATION_PACKET_AUTHORITY_INVALID")
     _self_hash(packet, "packet_sha256", "EVALUATION_PACKET_HASH_INVALID")
+    components = packet.get("components")
+    if not isinstance(components, Mapping) or tuple(sorted(components)) != EXPECTED_COMPONENT_IDS:
+        _error("EVALUATION_PACKET_COMPONENTS_INVALID")
     component_hashes = packet.get("component_sha256")
-    if not isinstance(component_hashes, Mapping) or dict(component_hashes) != _component_hashes(packet):
+    if (
+        not isinstance(component_hashes, Mapping)
+        or tuple(sorted(component_hashes)) != EXPECTED_COMPONENT_IDS
+        or dict(component_hashes) != _component_hashes(packet)
+    ):
         _error("EVALUATION_PACKET_COMPONENTS_INVALID")
     if packet.get("component_set_sha256") != sha256_bytes(canonical_json_bytes(component_hashes)):
         _error("EVALUATION_PACKET_COMPONENTS_INVALID")
