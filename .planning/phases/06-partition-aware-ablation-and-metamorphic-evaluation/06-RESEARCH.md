@@ -281,11 +281,11 @@ Phase 6 should adapt, not weaken, current scoring behavior: blocker diagnostics 
 | A2 | One Phase 6 local CLI should construct the full immutable package. | Summary / Project Structure | Medium; may need separate build/verify entry points to match existing CLI conventions. |
 | A3 | The result-state pseudocode is the minimal safe new API shape. | Code Examples | Medium; exact schema field names and constructor signatures need Wave 0 contract tests before implementation. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **No blocking product or authority question remains.**
+1. **RESOLVED — No blocking product, authority, requirement, or human-decision question remains.**
    - What we know: Phase 5 verification is passed and lifecycle state is complete; the Phase 4 branch remains Red with no model/call/retrieval/provider authority. [VERIFIED: .planning/phases/05-authorized-execution-and-immutable-evidence/05-VERIFICATION.md:1-14,102-110; experiments/specchoice-v1.3.2/phase4/branch-authority-v6.json:1]
-   - What's unclear: Only implementation-local names and exact immutable generation paths are delegated, not semantic decisions. [VERIFIED: .planning/phases/06-partition-aware-ablation-and-metamorphic-evaluation/06-CONTEXT.md:46-49]
+   - Resolution: Only implementation-local module names, CLI names, output generation names, and exact immutable generation paths remain delegated to planner/executor discretion; these are implementation choices, not semantic decisions or planning blockers. [VERIFIED: .planning/phases/06-partition-aware-ablation-and-metamorphic-evaluation/06-CONTEXT.md:46-49]
    - Recommendation: Decide these in PLAN.md, preserve them in a new versioned output schema, and make every choice testable before generation. [ASSUMED]
 
 ## Environment Availability
