@@ -3,24 +3,69 @@
 
 from __future__ import annotations
 
+import json
 import os
 from collections.abc import Mapping, Sequence
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from specchoice_evidence.canonical import canonical_json_bytes, require_sha256, sha256_bytes
+from specchoice_evidence.canonical import (
+    canonical_json_bytes,
+    require_sha256,
+    sha256_bytes,
+)
 from specchoice_evidence.filesystem import (
     FilesystemPolicyError,
     read_authoritative_files,
     write_exact_descriptor_files,
 )
 
-from .core import METRIC_IDS, RESULT_STATES, EvaluationBundle, EvaluationError, build_construction_feasibility, build_red_evaluation
+from .core import (
+    METRIC_IDS,
+    RESULT_STATES,
+    EvaluationBundle,
+    EvaluationError,
+    build_construction_feasibility,
+    build_red_evaluation,
+)
 
 _POLICY_SCHEMA = "partition-evaluation-policy-v1"
 _PACKET_SCHEMA = "partition-evaluation-red-packet-v1"
 _READINESS_SCHEMA = "partition-evaluation-red-readiness-v1"
 _OUTPUT_KEYS = ("packet", "markdown", "readiness")
+_DECISION_SCHEMA = "partition-evaluation-review-decision-v1"
+_RESPONSE_VALUES = frozenset(("approved", "disputed", "incomplete"))
+_DECISION_LIMITS = {
+    "external_publication_authorized": False,
+    "final_narrative_authorized": False,
+    "h5_interpretation_authorized": False,
+    "h6_communication_authorized": False,
+    "model_authorized": False,
+    "network_authorized": False,
+    "provider_authorized": False,
+    "retrieval_authorized": False,
+    "subprocess_authorized": False,
+}
+
+
+@dataclass(frozen=True)
+class ReviewDecision:
+    """Closed human review record, bound to one decision-free package."""
+
+    schema_version: str
+    generation_id: str
+    packet_sha256: str
+    readiness_sha256: str
+    reviewer_id: str
+    disposition: str
+    domain_responses: dict[str, str]
+    item_responses: dict[str, str]
+    disputes: list[dict[str, object]]
+    conclusion_ready: bool
+    phase7_interpretation_authorized: bool
+    authority_limits: dict[str, bool]
+    d16_acknowledgement: bool
+    decision_sha256: str
 
 
 def _error(code: str) -> None:
@@ -93,7 +138,7 @@ def validate_evaluation_policy(root: Path, policy: Mapping[str, object]) -> None
         _error("EVALUATION_POLICY_OUTPUTS_INVALID")
     if any(not isinstance(outputs[key], str) or not outputs[key] for key in _OUTPUT_KEYS):
         _error("EVALUATION_POLICY_OUTPUTS_INVALID")
-    if len(set(str(outputs[key]) for key in _OUTPUT_KEYS)) != len(_OUTPUT_KEYS):
+    if len({str(outputs[key]) for key in _OUTPUT_KEYS}) != len(_OUTPUT_KEYS):
         _error("EVALUATION_POLICY_OUTPUTS_INVALID")
     if tuple(policy.get("metric_ids", ())) != _PACKET_METRIC_IDS:
         _error("EVALUATION_POLICY_METRICS_INVALID")
@@ -334,3 +379,131 @@ def publish_evaluation_package(root: Path, policy: Mapping[str, object]) -> tupl
     except FilesystemPolicyError as error:
         raise EvaluationError("EVALUATION_OUTPUT_PARTIAL_OR_OCCUPIED") from error
     return packet, markdown, readiness
+
+
+def _response_map(value: object, expected: set[str], code: str) -> dict[str, str]:
+    if not isinstance(value, Mapping) or set(value) != expected:
+        _error(code)
+    result = {str(key): item for key, item in value.items()}
+    if any(not isinstance(item, str) or item not in _RESPONSE_VALUES for item in result.values()):
+        _error(code)
+    return result
+
+
+def _validate_disputes(value: object, domain_ids: set[str], item_ids: set[str]) -> list[dict[str, object]]:
+    if not isinstance(value, list):
+        _error("REVIEW_DECISION_DISPUTES_INVALID")
+    normalized: list[dict[str, object]] = []
+    for dispute in value:
+        if not isinstance(dispute, Mapping) or set(dispute) != {"blocking", "reason", "response", "target_id", "target_type"}:
+            _error("REVIEW_DECISION_DISPUTES_INVALID")
+        target_type, target_id = dispute.get("target_type"), dispute.get("target_id")
+        valid_target = (target_type == "domain" and target_id in domain_ids) or (target_type == "item" and target_id in item_ids)
+        if not valid_target or not isinstance(dispute.get("blocking"), bool) or dispute.get("response") not in {"disputed", "incomplete"}:
+            _error("REVIEW_DECISION_DISPUTES_INVALID")
+        if not isinstance(dispute.get("reason"), str) or not dispute["reason"].strip():
+            _error("REVIEW_DECISION_DISPUTES_INVALID")
+        normalized.append(dict(dispute))
+    return normalized
+
+
+def _review_targets(packet: Mapping[str, object]) -> tuple[set[str], set[str]]:
+    rows = packet.get("case_rows")
+    if not isinstance(rows, list):
+        _error("REVIEW_DECISION_TARGETS_INVALID")
+    domain_ids = {row.get("authority_domain") for row in rows if isinstance(row, Mapping)}
+    item_ids = {row.get("outcome_id") for row in rows if isinstance(row, Mapping)}
+    if not domain_ids or not item_ids or not all(isinstance(value, str) for value in domain_ids | item_ids):
+        _error("REVIEW_DECISION_TARGETS_INVALID")
+    return domain_ids, item_ids
+
+
+def _decision_payload(
+    *, packet: Mapping[str, object], readiness: Mapping[str, object], reviewer_id: str,
+    disposition: str, domain_responses: Mapping[str, str], item_responses: Mapping[str, str],
+    disputes: Sequence[Mapping[str, object]], d16_acknowledgement: bool,
+    mutation_requests: Sequence[object] = (),
+) -> dict[str, object]:
+    if mutation_requests:
+        _error("SUCCESSOR_REQUIRED_SAME_VERSION_MUTATION")
+    if not isinstance(reviewer_id, str) or not reviewer_id.strip() or disposition not in _RESPONSE_VALUES:
+        _error("REVIEW_DECISION_INVALID")
+    if d16_acknowledgement is not True:
+        _error("REVIEW_DECISION_D16_ACK_REQUIRED")
+    domains, items = _review_targets(packet)
+    checked_domains = _response_map(domain_responses, domains, "REVIEW_DECISION_DOMAIN_RESPONSES_INVALID")
+    checked_items = _response_map(item_responses, items, "REVIEW_DECISION_ITEM_RESPONSES_INVALID")
+    checked_disputes = _validate_disputes(list(disputes), domains, items)
+    response_values = set(checked_domains.values()) | set(checked_items.values())
+    if disposition == "approved" and (response_values != {"approved"} or checked_disputes):
+        _error("REVIEW_DECISION_APPROVAL_INVALID")
+    if disposition != "approved" and not checked_disputes:
+        _error("REVIEW_DECISION_DISPUTES_REQUIRED")
+    blocking = any(bool(entry["blocking"]) for entry in checked_disputes)
+    ready = disposition == "approved" and not blocking
+    return {
+        "schema_version": _DECISION_SCHEMA,
+        "generation_id": packet["generation_id"],
+        "packet_sha256": packet["packet_sha256"],
+        "readiness_sha256": readiness["readiness_sha256"],
+        "reviewer_id": reviewer_id,
+        "disposition": disposition,
+        "domain_responses": checked_domains,
+        "item_responses": checked_items,
+        "disputes": checked_disputes,
+        "conclusion_ready": ready,
+        "phase7_interpretation_authorized": ready,
+        "authority_limits": dict(_DECISION_LIMITS),
+        "d16_acknowledgement": True,
+    }
+
+
+def build_review_decision(
+    root: Path, policy: Mapping[str, object], *, reviewer_id: str, disposition: str,
+    domain_responses: Mapping[str, str], item_responses: Mapping[str, str],
+    disputes: Sequence[Mapping[str, object]], d16_acknowledgement: bool,
+    mutation_requests: Sequence[object] = (),
+) -> ReviewDecision:
+    """Build a closed decision from a human response and the validated package only."""
+    outputs = policy.get("outputs")
+    if not isinstance(outputs, Mapping):
+        _error("EVALUATION_POLICY_OUTPUTS_INVALID")
+    try:
+        packet = json.loads((root / str(outputs["packet"])).read_text(encoding="utf-8"))
+        markdown = (root / str(outputs["markdown"])).read_bytes()
+        readiness = json.loads((root / str(outputs["readiness"])).read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise EvaluationError("EVALUATION_OUTPUT_PARTIAL_OR_OCCUPIED") from error
+    validate_readiness(root, policy, packet, markdown, readiness)
+    payload = _decision_payload(
+        packet=packet, readiness=readiness, reviewer_id=reviewer_id, disposition=disposition,
+        domain_responses=domain_responses, item_responses=item_responses, disputes=disputes,
+        d16_acknowledgement=d16_acknowledgement, mutation_requests=mutation_requests,
+    )
+    payload["decision_sha256"] = sha256_bytes(canonical_json_bytes(payload))
+    return ReviewDecision(**payload)
+
+
+def validate_review_decision(root: Path, policy: Mapping[str, object], decision: Mapping[str, object]) -> ReviewDecision:
+    """Revalidate both upstream identities and the complete closed response record."""
+    if not isinstance(decision, Mapping) or decision.get("schema_version") != _DECISION_SCHEMA:
+        _error("REVIEW_DECISION_INVALID")
+    _self_hash(decision, "decision_sha256", "REVIEW_DECISION_HASH_INVALID")
+    payload = build_review_decision(
+        root, policy, reviewer_id=decision.get("reviewer_id", ""), disposition=decision.get("disposition", ""),
+        domain_responses=decision.get("domain_responses", {}), item_responses=decision.get("item_responses", {}),
+        disputes=decision.get("disputes", []), d16_acknowledgement=decision.get("d16_acknowledgement", False),
+    )
+    if dict(decision) != asdict(payload):
+        _error("REVIEW_DECISION_INVALID")
+    return payload
+
+
+def publish_review_decision(root: Path, policy: Mapping[str, object], decision: ReviewDecision, path: str) -> ReviewDecision:
+    """Publish exactly one canonical decision, allowing only byte-identical resume."""
+    validate_review_decision(root, policy, asdict(decision))
+    try:
+        write_exact_descriptor_files(root, {path: canonical_json_bytes(asdict(decision))})
+    except FilesystemPolicyError as error:
+        raise EvaluationError("REVIEW_DECISION_PARTIAL_OR_OCCUPIED") from error
+    return decision

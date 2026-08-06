@@ -11,7 +11,14 @@ from pathlib import Path
 from specchoice_evidence.canonical import canonical_json_bytes
 
 from .core import EvaluationError, build_red_evaluation
-from .review import build_evaluation_packet, build_readiness, publish_evaluation_package, validate_evaluation_policy, validate_readiness
+from .review import (
+    build_evaluation_packet,
+    build_readiness,
+    publish_evaluation_package,
+    validate_evaluation_policy,
+    validate_readiness,
+    validate_review_decision,
+)
 
 
 class _NoAbbrevParser(argparse.ArgumentParser):
@@ -28,6 +35,11 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument("--repo-root", required=True)
         command.add_argument("--policy", required=True)
         command.set_defaults(handler=handler)
+    decision = commands.add_parser("validate-decision")
+    decision.add_argument("--repo-root", required=True)
+    decision.add_argument("--policy", required=True)
+    decision.add_argument("--decision", required=True)
+    decision.set_defaults(handler=_validate_decision)
     return parser
 
 
@@ -50,7 +62,7 @@ def _build_red(args: argparse.Namespace) -> int:
         readiness = build_readiness(packet)
         print(canonical_json_bytes({"branch": bundle.branch, "packet": packet, "readiness": readiness}).decode("utf-8"), end="")
         return 0
-    packet, markdown, readiness = publish_evaluation_package(root, policy)
+    packet, _markdown, readiness = publish_evaluation_package(root, policy)
     print(canonical_json_bytes({
         "branch": packet["branch"], "markdown_sha256": readiness["markdown_sha256"],
         "packet_sha256": packet["packet_sha256"], "readiness_sha256": readiness["readiness_sha256"],
@@ -71,6 +83,21 @@ def _verify_red_package(args: argparse.Namespace) -> int:
         raise EvaluationError("EVALUATION_OUTPUT_PARTIAL_OR_OCCUPIED") from error
     validate_readiness(root, policy, packet, markdown, readiness)
     print(canonical_json_bytes({"packet_sha256": packet["packet_sha256"], "readiness_sha256": readiness["readiness_sha256"]}).decode("utf-8"), end="")
+    return 0
+
+
+def _validate_decision(args: argparse.Namespace) -> int:
+    root, policy = Path(args.repo_root).resolve(), _load_policy(args.policy)
+    try:
+        decision = json.loads((root / args.decision).read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise EvaluationError("REVIEW_DECISION_INVALID") from error
+    validated = validate_review_decision(root, policy, decision)
+    print(canonical_json_bytes({
+        "conclusion_ready": validated.conclusion_ready,
+        "decision_sha256": validated.decision_sha256,
+        "phase7_interpretation_authorized": validated.phase7_interpretation_authorized,
+    }).decode("utf-8"), end="")
     return 0
 
 
