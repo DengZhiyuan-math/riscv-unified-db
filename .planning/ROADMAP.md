@@ -297,11 +297,11 @@ Plans:
   3. On Green/Yellow, the reviewer can inspect each call's prompt hash, model snapshot, sampling and output settings, actual token use, raw response, parse result, refusal/truncation state, and retry/failure state.
   4. On Red, the reviewer can verify an empty real-model call ledger and preserved runner, construction, ambiguity, and trigger evidence; the G/Y requirements remain conditional until Phase 7 validates Red closure.
 
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 
 Plans:
 
-- [ ] 05-09-PLAN.md
+- [x] 05-09-PLAN.md
 
 - [x] 05-00-PLAN.md
 - [x] 05-01-PLAN.md
@@ -445,6 +445,6 @@ Plans:
 | 2. Deterministic Measurement Spine | 22/22 | Complete | 2026-08-03 |
 | 3. Human-Reviewed Data Preregistration | 4/4 | Complete   | 2026-08-04 |
 | 4. Offline Treatments, Retrieval, and Branch Freeze | 4/4 | Complete    | 2026-08-04 |
-| 5. Authorized Execution and Immutable Evidence | 5/6 | In Progress|  |
+| 5. Authorized Execution and Immutable Evidence | 6/6 | Complete   | 2026-08-06 |
 | 6. Partition-Aware Ablation and Metamorphic Evaluation | 0/4 | Not started | - |
 | 7. Reproducible Feasibility Conclusion | 0/3 | Not started | - |

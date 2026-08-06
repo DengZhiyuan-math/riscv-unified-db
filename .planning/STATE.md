@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v1.3.2
 milestone_name: milestone
 current_phase: 05
-current_phase_name: authorized-execution-and-immutable-evidence
-status: ready_to_execute
-stopped_at: 05-09 gap-closure plan is ready; it must establish durable v2 custody and the explicit v2-to-v3 successor mapping before Phase 5 can be re-verified
-last_updated: "2026-08-06T08:12:07.350Z"
+status: completed
+stopped_at: Phase 05 completed after 05-09 made the exact v2 failed-closed root durable and independent re-verification passed all four must-haves; Phase 06 is next
+last_updated: "2026-08-06T08:32:41.966Z"
 last_activity: 2026-08-06
-last_activity_desc: Planned 05-09 to close the verifier's immutable-custody and forward-mapping gaps without changing existing evidence.
+last_activity_desc: Phase 05 marked complete
 progress:
   total_phases: 7
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 43
-  completed_plans: 37
+  completed_plans: 38
   percent: 57
+current_phase_name: authorized-execution-and-immutable-evidence
 ---
 
 # Project State
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-30)
 
 **Core value:** Produce a reproducible, leakage-safe, falsifiable A/B/C result—positive, negative, or Red-path infeasible—without weakening gold semantics, deterministic measurement, or human control of RISC-V judgments.
-**Current focus:** Phase 05 gap closure; Phase 06 remains blocked pending independent re-verification.
+**Current focus:** Phase 05 is complete; Phase 06 is the next unstarted phase.
 
 ## Current Position
 
-Phase: 05 (authorized-execution-and-immutable-evidence) — READY TO EXECUTE GAP CLOSURE
-Plan: 5 of 6 active discoverable plans complete (05-00, 05-01, 05-04, 05-05, and 05-08); 05-09 is the sole pending gap-closure plan. 05-02 is rejected, 05-03 is superseded, and partial 05-06/05-07 remain failed-closed historical records without summaries.
-Status: `05-VERIFICATION.md` found that the exact v2 failed-closed root is untracked and that committed v3 successor records are not forward-mapped into the 05-08 declared custody contract. 05-09 may add only durable custody for the identical root and a canonical non-authoritative v2-to-v3 mapping successor, then request independent re-verification. Phase 6 remains blocked; no model, Green/Yellow, publication, metric, or final-conclusion authority is granted.
-Last activity: 2026-08-06 — Created and independently plan-checked 05-09 gap closure.
+Phase: 05 (authorized-execution-and-immutable-evidence) — COMPLETE
+Plan: 6 of 6 active discoverable plans complete (05-00, 05-01, 05-04, 05-05, 05-08, and 05-09); 05-02 is rejected, 05-03 is superseded, and partial 05-06/05-07 remain failed-closed historical records without summaries.
+Status: 05-09 added durable Git custody for the identical v2 failed-closed root and a canonical non-authoritative v2-to-v3 mapping successor. Independent re-verification passed all four must-haves, including a fresh archive replay and four focused no-call/fail-closed tests. No model, Green/Yellow, publication, metric, or final-conclusion authority is granted.
+Last activity: 2026-08-06 — Phase 05 closure independently re-verified (4/4 must-haves).
 
-Progress: [████████░░] 83% of active discoverable Phase 5 plans complete
+Progress: [██████████] 100% of active discoverable Phase 5 plans complete
 
 ## Performance Metrics
 
