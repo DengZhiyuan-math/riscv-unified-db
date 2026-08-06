@@ -21,6 +21,19 @@ That said, the following data has been validated against third-party sources:
 * Instruction names and assembly formats are validated against LLVM.
 ----
 
+== Local SpecChoice research status
+
+[NOTE]
+----
+This fork also contains the local-only `experiments/specchoice-v1.3.2` feasibility
+research track. Its Phase 6 generation-003 Red evaluation package and the separate,
+hash-bound reviewer decision have been published as immutable local evidence. The
+phase has *not* been formally closed: its final exact-resume/adversarial check and
+phase-level verification remain pending. This is not a model, provider, network,
+retrieval, external-publication, or production authorization, and it does not change
+the upstream UnifiedDB project status.
+----
+
 == Quick links
 
 * https://riscv.github.io/riscv-unified-db/index.html[The latest UDB-generated **UNOFFICIAL** RISC-V specifications].
