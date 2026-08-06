@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.3.2
 milestone_name: milestone
-current_phase: 05
-current_phase_name: authorized-execution-and-immutable-evidence
-status: completed
-stopped_at: Phase 05 completed after 05-09 made the exact v2 failed-closed root durable and independent re-verification passed all four must-haves; Phase 06 is next
-last_updated: "2026-08-06T09:23:52.401Z"
+current_phase: 06
+current_phase_name: partition-aware-ablation-and-metamorphic-evaluation
+status: executing
+stopped_at: Completed 06-06-PLAN.md
+last_updated: "2026-08-06T12:31:29.902Z"
 last_activity: 2026-08-06
-last_activity_desc: Phase 05 closure independently re-verified (4/4 must-haves).
+last_activity_desc: Phase 06 execution started
 progress:
   total_phases: 7
   completed_phases: 4
-  total_plans: 48
-  completed_plans: 38
+  total_plans: 53
+  completed_plans: 44
   percent: 57
 ---
 
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-30)
 
 **Core value:** Produce a reproducible, leakage-safe, falsifiable A/B/C result—positive, negative, or Red-path infeasible—without weakening gold semantics, deterministic measurement, or human control of RISC-V judgments.
-**Current focus:** Phase 05 is complete; Phase 06 is the next unstarted phase.
+**Current focus:** Phase 06 — partition-aware-ablation-and-metamorphic-evaluation
 
 ## Current Position
 
-Phase: 05 (authorized-execution-and-immutable-evidence) — COMPLETE
-Plan: 6 of 6 active discoverable plans complete (05-00, 05-01, 05-04, 05-05, 05-08, and 05-09); 05-02 is rejected, 05-03 is superseded, and partial 05-06/05-07 remain failed-closed historical records without summaries.
-Status: 05-09 added durable Git custody for the identical v2 failed-closed root and a canonical non-authoritative v2-to-v3 mapping successor. Independent re-verification passed all four must-haves, including a fresh archive replay and four focused no-call/fail-closed tests. No model, Green/Yellow, publication, metric, or final-conclusion authority is granted.
-Last activity: 2026-08-06 — Phase 05 closure independently re-verified (4/4 must-haves).
+Phase: 06 (partition-aware-ablation-and-metamorphic-evaluation) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-08-06 — Phase 06 execution started
 
-Progress: [██████████] 100% of active discoverable Phase 5 plans complete
+Progress: [████████░░] 83% of active discoverable Phase 5 plans complete
 
 ## Performance Metrics
 
@@ -92,6 +92,7 @@ Progress: [██████████] 100% of active discoverable Phase 5 p
 | Phase 05 P01 | 3min | 3 tasks | 5 files |
 | Phase 05 P04 | multi-session | 3 tasks | 8 files |
 | Phase 05 P05 | multi-session | 3 tasks | 13 files |
+| Phase 06 P06 | 5m | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -189,6 +190,8 @@ Recent decisions affecting current work:
 - [Phase 05]: User-approved current forward decision `FWD-05-08-MUSTOOL-INCLUDE-NEXT-INTTYPES-20260805` preserves every predecessor decision/record and supersedes only the unexecuted mustool header hunk. Task 02 alone may insert exactly `#include_next <inttypes.h>` immediately after pristine upstream line 26 `#include <string.h>` and before the unchanged blank line/local `IntTypes.h` block, explicitly skipping the local case-insensitive shadow. Combined with the three spacing corrections, the successor additions affect exactly `custom_minisat/Options.h` and exactly two default-context diff hunks, the standard-header block and `Int64Option::help`; the complete patch SHA-256, canonical source-diff SHA-256, exact complete and successor-only changed-path/hunk inventories, pristine pre-tree, and patched post-tree must bind together. The must build remains exactly `/usr/bin/make CXX=/usr/bin/clang++`; no direct predecessor include spelling, fifth source line, alternate/missing/duplicated/misplaced include, relocation/reordering of an existing include, include-search path or environment change, `-I`, `-isystem`, `-iquote`, `-std=...`, `-x`, alternate compiler, other flag change, generated edit, or other source byte is authorized.
 - [Phase 05]: No strip, relink, normalization, byte masking/zeroing/rewriting, disassembly-text comparison, dynamic ignore region, arbitrary metadata allowlist, changed source/patch/argv/executable section/functional output, cache-before-all-tools, formal drift, or additional authority is permitted.
 - [Phase 05]: Commit `46ade93dda1b55eb76a2938855d4beb1487259c0` and `tests/test_native_port_contract.py` SHA-256 `83426d8bfb2507d53787ded7d1f59f11faff45050cdb9e22863b8fb92b41a69f` are the exact Task 01 RED predecessor. Execution must finish the missing implementation and preserve unrelated `Gemfile.lock`/guarded-harness worktree changes rather than reverting or absorbing them.
+- [Phase ?]: Generation-001 is immutable history; only generation-002 policy can satisfy the repaired derivation contract.
+- [Phase ?]: Construction evidence requires exact ordered project-relative path/status/hash declarations and explicit project-root reads.
 
 ### Pending Todos
 
@@ -211,6 +214,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-05T21:57:06.343Z
-Stopped at: Phase 6 context gathered; Phase 5 remains the active dependency
-Resume file: .planning/phases/06-partition-aware-ablation-and-metamorphic-evaluation/06-CONTEXT.md
+Last session: 2026-08-06T12:31:29.882Z
+Stopped at: Completed 06-06-PLAN.md
+Resume file: None

@@ -29,7 +29,7 @@ Requirements for the frozen SpecChoice v1.3.2 execution baseline. Each maps to e
 - [x] **TS-03** `[ALL]`: The operator can run a versioned PR #2164 adapter and deterministic measurement runner that scores golden predictions for all 11 pinned fixtures, including surfacing and then classifying out the candidate fixture.
 - [x] **TS-04** `[ALL]`: The operator receives strict validation of the canonical adjudication schema, including the unique nullable `surfaced=false` representation, rejection of `parameter_status:not_surfaced`, unknown-key rejection, enum enforcement, and no silent repair.
 - [x] **TS-05** `[ALL]`: Tests and reports expose every required stable diagnostic code with structured fields, while `ACCEPTED_PARAMETER_NAME_MISSING` remains an identity warning that cannot change disposition correctness.
-- [ ] **TS-06** `[ALL]`: The reviewer receives independently calculated surfacing, disposition, exact/incorrect/missing identity, classify-out, and evidence-integrity outcomes; Green/Yellow additionally reports each frame axis and retrieval quality separately.
+- [x] **TS-06** `[ALL]`: The reviewer receives independently calculated surfacing, disposition, exact/incorrect/missing identity, classify-out, and evidence-integrity outcomes; Green/Yellow additionally reports each frame axis and retrieval quality separately.
 - [x] **TS-07** `[ALL]`: The reviewer can audit at least one non-empty verbatim evidence span for every surfaced finding and can inspect immutable raw outputs, parsed outputs, and parser diagnostics as separate artifacts.
 - [x] **TS-08** `[ALL]`: Automated validation proves provenance for every data item, zero prototype/held-out example overlap, zero prototype/strict-core primary-family overlap, registered primary families, compatible registry versions, and no held-out passage in prompt demonstrations.
 - [x] **TS-09** `[ALL]`: The human reviewer controls labels, dataset membership, primary families, contrastive pairs and axes, relevance judgments, metamorphic expectations, fallback state, and public communication; any frozen-input change stops the run, enters the decision log, increments the experiment version, and triggers symmetric reruns.
@@ -44,7 +44,7 @@ Requirements for the frozen SpecChoice v1.3.2 execution baseline. Each maps to e
 
 - [x] **H1-01** `[G/Y]`: For systems B and C, the reviewer receives exactly the three required DelegationFrame axes—`authority`, `choice_object`, and `choice_space_origin`—using frozen enums, permitting `unknown`, and carrying a verbatim evidence span for each axis.
 - [ ] **H1-02** `[G/Y]`: The reviewer can compare paired B-minus-A case outcomes where A and B use the same two fixed complete contrastive pairs and all shared controls, with the DelegationFrame as the intended intervention.
-- [ ] **H1-03** `[G/Y]`: The reviewer receives separate accuracy for all three frame axes and frozen `FRAME_COMBINATION_REQUIRES_REVIEW` warnings that remain non-blocking and cannot alter axis or disposition correctness.
+- [x] **H1-03** `[G/Y]`: The reviewer receives separate accuracy for all three frame axes and frozen `FRAME_COMBINATION_REQUIRES_REVIEW` warnings that remain non-blocking and cannot alter axis or disposition correctness.
 - [ ] **H1-04** `[G/Y]`: The reviewer can determine whether the frame changes shortcut-family errors and required metamorphic directions without post-hoc prompt, label, family, or threshold changes.
 
 ### H2 — Axis-Contrastive Retrieval Effect
@@ -135,7 +135,7 @@ Roadmap creation maps every v1 requirement to exactly one phase.
 | TS-03 | Phase 2 | Complete |
 | TS-04 | Phase 2 | Complete |
 | TS-05 | Phase 2 | Complete |
-| TS-06 | Phase 6 | Pending |
+| TS-06 | Phase 6 | Complete |
 | TS-07 | Phase 5 | Complete |
 | TS-08 | Phase 3 | Complete |
 | TS-09 | Phase 3 | Complete |
@@ -147,7 +147,7 @@ Roadmap creation maps every v1 requirement to exactly one phase.
 | TS-15 | Phase 7 | Pending |
 | H1-01 | Phase 4 | Complete |
 | H1-02 | Phase 6 | Pending |
-| H1-03 | Phase 6 | Pending |
+| H1-03 | Phase 6 | Complete |
 | H1-04 | Phase 6 | Pending |
 | H2-01 | Phase 3 | Complete |
 | H2-02 | Phase 4 | Complete |

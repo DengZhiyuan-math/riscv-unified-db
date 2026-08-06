@@ -373,29 +373,41 @@ Plans:
   4. PairHit@K is reported only for preregistered relevance judgments, with retrieved pair IDs per case; strict, auxiliary, metamorphic, and repeat-disagreement outputs retain separate IDs and denominators.
   5. On Red, the reviewer receives only the deterministic measurement and construction-feasibility evaluation, with no absent model outputs presented as experimental zeros or extraction evidence.
 
-**Plans:** 10 plans (5 original plans and 5 forward-only gap-closure successors)
+**Plans:** 6/10 plans executed
 
 Plans:
+
+- [x] 06-01-PLAN.md
+- [x] 06-02-PLAN.md
+- [x] 06-03-PLAN.md
+- [x] 06-04-PLAN.md
+- [x] 06-05-PLAN.md
+- [x] 06-06-PLAN.md
+- [ ] 06-07-PLAN.md
+- [ ] 06-08-PLAN.md
+- [ ] 06-09-PLAN.md
+- [ ] 06-10-PLAN.md
+
 **Wave 1**
 
-- [ ] 06-01: Join immutable predictions to frozen gold and compute partition-specific outcome metrics.
-- [ ] 06-02: Produce paired B-A/C-B analyses, frame diagnostics, and the frozen failure taxonomy.
+- [x] 06-01: Join immutable predictions to frozen gold and compute partition-specific outcome metrics.
+- [x] 06-02: Produce paired B-A/C-B analyses, frame diagnostics, and the frozen failure taxonomy.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 06-03: Evaluate metamorphic directions, preregistered PairHit@K, retrieved IDs, and repeat stability.
+- [x] 06-03: Evaluate metamorphic directions, preregistered PairHit@K, retrieved IDs, and repeat stability.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 06-04: Assemble branch-aware Green/Yellow or Red evaluation artifacts with denominator and partition audits.
+- [x] 06-04: Assemble branch-aware Green/Yellow or Red evaluation artifacts with denominator and partition audits.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 06-05: Collect the separate human evaluation decision over the exact immutable packet/readiness identities and publish its closed canonical record without widening authority.
+- [x] 06-05: Collect the separate human evaluation decision over the exact immutable packet/readiness identities and publish its closed canonical record without widening authority.
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 06-06: Repair root-derived provenance validation, exact component membership, and stable runtime diagnostics without changing generation-001.
+- [x] 06-06: Repair root-derived provenance validation, exact component membership, and stable runtime diagnostics without changing generation-001.
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
@@ -477,5 +489,5 @@ Plans:
 | 3. Human-Reviewed Data Preregistration | 4/4 | Complete   | 2026-08-04 |
 | 4. Offline Treatments, Retrieval, and Branch Freeze | 4/4 | Complete    | 2026-08-04 |
 | 5. Authorized Execution and Immutable Evidence | 6/6 | Complete   | 2026-08-06 |
-| 6. Partition-Aware Ablation and Metamorphic Evaluation | 0/5 | Not started | - |
+| 6. Partition-Aware Ablation and Metamorphic Evaluation | 6/10 | In Progress|  |
 | 7. Reproducible Feasibility Conclusion | 0/3 | Not started | - |
