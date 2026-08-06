@@ -46,6 +46,7 @@ from specchoice_evaluation.review import (
     build_readiness,
     build_review_decision,
     publish_evaluation_package,
+    publish_review_decision,
     render_evaluation_markdown,
     validate_evaluation_packet,
     validate_evaluation_policy,
@@ -72,6 +73,13 @@ class PartitionEvaluationTests(unittest.TestCase):
         """Load the frozen successor policy without creating its outputs."""
         del project_root
         return json.loads((experiment_root / "config/evaluation/partition-evaluation-red-generation-002.json").read_text())
+
+    def _generation_three_policy(
+        self, experiment_root: Path = EXPERIMENT, project_root: Path = PROJECT,
+    ) -> dict[str, object]:
+        """Load the forward-only recovery policy without creating outputs."""
+        del project_root
+        return json.loads((experiment_root / "config/evaluation/partition-evaluation-red-generation-003.json").read_text())
 
     def _copy_project(self, directory: str) -> tuple[Path, Path]:
         project = Path(directory) / "project"
@@ -403,10 +411,13 @@ class PartitionEvaluationTests(unittest.TestCase):
             "src/specchoice_evaluation/cli.py",
             "src/specchoice_evaluation/core.py",
             "src/specchoice_evaluation/review.py",
-            "tests/test_partition_evaluation.py",
         )
         inputs = {item["path"]: item["sha256"] for item in policy["inputs"]}
         self.assertTrue(all(inputs[path] == sha256_bytes((EXPERIMENT / path).read_bytes()) for path in source_paths))
+        self.assertEqual(
+            "894bdd6d3690ab4a66f506c8907bf0ae48c21d3138618dcb39583cbe6dfa27e7",
+            inputs["tests/test_partition_evaluation.py"],
+        )
         self.assertEqual({
             "policy": "partition-evaluation-policy-v2",
             "packet": "partition-evaluation-red-packet-v2",
@@ -424,8 +435,150 @@ class PartitionEvaluationTests(unittest.TestCase):
             "packet": "runs/partition-evaluation-red-generation-002/evaluation-packet.json",
             "readiness": "receipts/partition-evaluation-red-generation-002-readiness.json",
         }, policy["outputs"])
-        for path in (*policy["outputs"].values(), "reviews/partition-evaluation-red-generation-002-decision.json"):
-            self.assertFalse((EXPERIMENT / path).exists())
+        for path in policy["outputs"].values():
+            self.assertTrue((EXPERIMENT / str(path)).is_file())
+        self.assertFalse((EXPERIMENT / "reviews/partition-evaluation-red-generation-002-decision.json").exists())
+
+    def test_generation_002_package_is_preserved_as_incomplete_predecessor(self) -> None:
+        receipt_path = EXPERIMENT / "receipts/partition-evaluation-red-generation-002-incomplete.json"
+        receipt = json.loads(receipt_path.read_text())
+        expected_hashes = {
+            "config/evaluation/partition-evaluation-red-generation-002.json": "872c1ef7278d06b55f89f1a00bb3555cce5cec3b987a3971a9226a79cb2684c7",
+            "tests/test_partition_evaluation.py": "894bdd6d3690ab4a66f506c8907bf0ae48c21d3138618dcb39583cbe6dfa27e7",
+            "runs/partition-evaluation-red-generation-002/evaluation-packet.json": "e14c4d2b87e5880db018903ae7b404dcf190a257b20633c048208b111d6d8bee",
+            "runs/partition-evaluation-red-generation-002/evaluation-report.md": "1cbba5758c70e4f64cd558c960bf683be0f16e3ed82d1d4b10de1451c550f183",
+            "receipts/partition-evaluation-red-generation-002-readiness.json": "84f3887313e5febb1406b1db2a3165cb7878311deb5693042e84fd6a3836b00c",
+        }
+        self.assertEqual("incomplete_execution_failed_closed", receipt["status"])
+        self.assertEqual("REQUIRED_TEST_MISSING_FROM_FROZEN_GENERATION", receipt["stable_reason"])
+        self.assertEqual({
+            "conclusion_ready": False,
+            "external_publication_authorized": False,
+            "model_authorized": False,
+            "network_authorized": False,
+            "phase7_interpretation_authorized": False,
+            "provider_authorized": False,
+            "retrieval_authorized": False,
+            "subprocess_authorized": False,
+        }, receipt["authority_limits"])
+        self.assertEqual({
+            "exists": False,
+            "path": "reviews/partition-evaluation-red-generation-002-decision.json",
+        }, receipt["human_decision"])
+        self.assertFalse((EXPERIMENT / receipt["human_decision"]["path"]).exists())
+        bindings = {binding["path"]: binding for binding in receipt["artifact_bindings"]}
+        self.assertEqual(set(expected_hashes), set(bindings))
+        self.assertEqual(expected_hashes, {path: binding["raw_sha256"] for path, binding in bindings.items()})
+        self.assertEqual("8388d9d4d4d32b3abfa6ff6054e683669648cfc238e2f4efb8c9296e65eb3be0", bindings["runs/partition-evaluation-red-generation-002/evaluation-packet.json"]["embedded_identity_sha256"])
+        self.assertEqual("6f61010919d05db43b502ddc919c453bf10edf5ebbe97013a7896eb0abbeeb0d", bindings["receipts/partition-evaluation-red-generation-002-readiness.json"]["embedded_identity_sha256"])
+        frozen = dict(receipt)
+        claimed = frozen.pop("receipt_sha256")
+        self.assertEqual(claimed, sha256_bytes(canonical_json_bytes(frozen)))
+        self.assertEqual(expected_hashes["config/evaluation/partition-evaluation-red-generation-002.json"], sha256_bytes((EXPERIMENT / "config/evaluation/partition-evaluation-red-generation-002.json").read_bytes()))
+        for path in (
+            "runs/partition-evaluation-red-generation-002/evaluation-packet.json",
+            "runs/partition-evaluation-red-generation-002/evaluation-report.md",
+            "receipts/partition-evaluation-red-generation-002-readiness.json",
+        ):
+            self.assertEqual(expected_hashes[path], sha256_bytes((EXPERIMENT / path).read_bytes()))
+
+    def test_generation_003_policy_freezes_test_and_incomplete_predecessor(self) -> None:
+        policy = self._generation_three_policy()
+        validate_evaluation_policy(EXPERIMENT, PROJECT, policy)
+        self.assertEqual("partition-evaluation-red-generation-003", policy["generation_id"])
+        inputs = policy["inputs"]
+        self.assertEqual(sorted(inputs, key=lambda value: value["path"]), inputs)
+        input_hashes = {entry["path"]: entry["sha256"] for entry in inputs}
+        self.assertEqual(sha256_bytes((EXPERIMENT / "tests/test_partition_evaluation.py").read_bytes()), input_hashes["tests/test_partition_evaluation.py"])
+        predecessor = policy["predecessor_generation"]
+        self.assertEqual("incomplete_execution_failed_closed", predecessor["status"])
+        self.assertEqual("partition-evaluation-red-generation-002", predecessor["generation_id"])
+        expected = (
+            "config/evaluation/partition-evaluation-red-generation-002.json",
+            "runs/partition-evaluation-red-generation-002/evaluation-packet.json",
+            "runs/partition-evaluation-red-generation-002/evaluation-report.md",
+            "receipts/partition-evaluation-red-generation-002-readiness.json",
+            "receipts/partition-evaluation-red-generation-002-incomplete.json",
+        )
+        self.assertEqual(expected, tuple(item["path"] for item in predecessor["artifacts"]))
+        self.assertTrue(all(input_hashes[path] == item["sha256"] for path, item in zip(expected, predecessor["artifacts"], strict=True)))
+        self.assertFalse((EXPERIMENT / "reviews/partition-evaluation-red-generation-002-decision.json").exists())
+        self.assertFalse((EXPERIMENT / "reviews/partition-evaluation-red-generation-003-decision.json").exists())
+
+    def test_generation_003_exact_resume_and_adversarial_rejection(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project, experiment = self._copy_project(directory)
+            policy = self._generation_three_policy(experiment, project)
+            for path in policy["outputs"].values():
+                target = experiment / str(path)
+                if target.exists():
+                    target.unlink()
+            packet, markdown, readiness = publish_evaluation_package(experiment, project, policy)
+            paths = tuple(str(path) for path in policy["outputs"].values())
+            before = {path: ((experiment / path).read_bytes(), (experiment / path).stat().st_mtime_ns) for path in paths}
+            self.assertEqual((packet, markdown, readiness), publish_evaluation_package(experiment, project, policy))
+            self.assertEqual(before, {path: ((experiment / path).read_bytes(), (experiment / path).stat().st_mtime_ns) for path in paths})
+            forged = json.loads(canonical_json_bytes(packet))
+            forged["components"]["warnings"].append({"forged": True})
+            forged["component_sha256"] = {name: sha256_bytes(canonical_json_bytes(value)) for name, value in sorted(forged["components"].items())}
+            forged["component_set_sha256"] = sha256_bytes(canonical_json_bytes(forged["component_sha256"]))
+            forged.pop("packet_sha256")
+            forged["packet_sha256"] = sha256_bytes(canonical_json_bytes(forged))
+            with self.assertRaisesRegex(Exception, "EVALUATION_PACKET_DERIVATION_INVALID"):
+                validate_evaluation_packet(experiment, project, policy, forged)
+            for changed in (
+                {**policy, "component_ids": policy["component_ids"][:-1]},
+                {**policy, "component_ids": [*policy["component_ids"], "unexpected"]},
+                {**policy, "runtime_closure": {"path": "receipts/runtime-executable-closure-v4.json", "sha256": "0" * 64}},
+            ):
+                with self.assertRaisesRegex(Exception, "EVALUATION_POLICY_(COMPONENTS|RUNTIME)_INVALID"):
+                    validate_evaluation_policy(experiment, project, self._rehash_policy(changed))
+            substituted = json.loads(canonical_json_bytes(policy))
+            substituted["inputs"][0]["sha256"] = "0" * 64
+            with self.assertRaisesRegex(Exception, "EVALUATION_POLICY_INPUT_SUBSTITUTED"):
+                validate_evaluation_policy(experiment, project, self._rehash_policy(substituted))
+            (experiment / paths[0]).unlink()
+            with self.assertRaisesRegex(Exception, "EVALUATION_OUTPUT_PARTIAL_OR_OCCUPIED"):
+                publish_evaluation_package(experiment, project, policy)
+
+    def test_generation_003_decision_exact_resume_and_authority_limits(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            project, experiment = self._copy_project(directory)
+            policy = self._generation_three_policy(experiment, project)
+            for path in policy["outputs"].values():
+                target = experiment / str(path)
+                if target.exists():
+                    target.unlink()
+            decision_path = "reviews/partition-evaluation-red-generation-003-decision.json"
+            target = experiment / decision_path
+            if target.exists():
+                target.unlink()
+            packet, _markdown, _readiness = publish_evaluation_package(experiment, project, policy)
+            domains = {row["authority_domain"]: "approved" for row in packet["case_rows"]}
+            items = {row["outcome_id"]: "approved" for row in packet["case_rows"]}
+            decision = build_review_decision(
+                experiment, project, policy, reviewer_id="synthetic-reviewer", disposition="approved",
+                domain_responses=domains, item_responses=items, disputes=[], d16_acknowledgement=True,
+            )
+            publish_review_decision(experiment, project, policy, decision, decision_path)
+            before = (target.read_bytes(), target.stat().st_mtime_ns)
+            self.assertEqual(decision, publish_review_decision(experiment, project, policy, decision, decision_path))
+            self.assertEqual(before, (target.read_bytes(), target.stat().st_mtime_ns))
+            for mutation in (
+                lambda value: value.__setitem__("packet_sha256", "0" * 64),
+                lambda value: value["domain_responses"].pop(next(iter(value["domain_responses"]))),
+                lambda value: value.__setitem__("disputes", [{"blocking": True, "reason": "synthetic", "response": "disputed", "target_id": next(iter(domains)), "target_type": "domain"}]),
+                lambda value: value["authority_limits"].__setitem__("model_authorized", True),
+            ):
+                changed = asdict(decision)
+                mutation(changed)
+                changed.pop("decision_sha256")
+                changed["decision_sha256"] = sha256_bytes(canonical_json_bytes(changed))
+                with self.assertRaisesRegex(Exception, "REVIEW_DECISION_(HASH|DOMAIN_RESPONSES|APPROVAL|INVALID)"):
+                    validate_review_decision(experiment, project, policy, changed)
+            target.write_bytes(b"different")
+            with self.assertRaisesRegex(Exception, "REVIEW_DECISION_PARTIAL_OR_OCCUPIED"):
+                publish_review_decision(experiment, project, policy, decision, decision_path)
 
     def test_component_inventory_is_exact_and_live(self) -> None:
         policy = self._generation_two_policy()
