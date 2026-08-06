@@ -15,8 +15,15 @@ from specchoice_data.relevance import (
     validate_metamorphic_registry_v1,
 )
 from specchoice_evidence.canonical import canonical_json_bytes, sha256_bytes
-from specchoice_evidence.filesystem import FilesystemPolicyError, read_authoritative_files
-from specchoice_execution.red_v2 import RedExecutionV2Error, validate_red_authority_v2, validate_red_evidence_v2
+from specchoice_evidence.filesystem import (
+    FilesystemPolicyError,
+    read_authoritative_files,
+)
+from specchoice_execution.red_v2 import (
+    RedExecutionV2Error,
+    validate_red_authority_v2,
+    validate_red_evidence_v2,
+)
 from specchoice_measurement.diagnostics import Diagnostic, ordered_diagnostics
 
 
@@ -388,7 +395,6 @@ def build_red_evaluation(root: Path) -> EvaluationBundle:
             )
             for (fixture_id, finding_id), item in zip(identities, cases, strict=True)
         )
-        case_id = {str(item["finding_id"]): str(item["fixture_id"]) for item in cases}
         population_specs = {
             "surfacing": [item["finding_id"] for item in cases if item.get("category") != "negative"],
             "disposition": [item["finding_id"] for item in cases if item.get("category") != "negative"],

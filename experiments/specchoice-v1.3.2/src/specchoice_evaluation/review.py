@@ -39,7 +39,7 @@ def build_readiness(packet: Mapping[str, object]) -> dict[str, object]:
     """Return a machine readiness identity only; it is never approval."""
     packet_sha256 = packet.get("packet_sha256")
     if not isinstance(packet_sha256, str):
-        raise ValueError("EVALUATION_PACKET_HASH_INVALID")
+        raise TypeError("EVALUATION_PACKET_HASH_INVALID")
     payload = {
         "packet_sha256": packet_sha256,
         "schema_version": "partition-evaluation-red-readiness-v1",

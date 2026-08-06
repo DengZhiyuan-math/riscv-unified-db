@@ -11,7 +11,6 @@ import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
-from specchoice_evidence.canonical import canonical_json_bytes
 from specchoice_evaluation.cli import main
 from specchoice_evaluation.core import (
     METRIC_IDS,
@@ -20,7 +19,12 @@ from specchoice_evaluation.core import (
     build_population_manifest,
     build_red_evaluation,
 )
-from specchoice_evaluation.review import build_evaluation_packet, build_readiness, render_evaluation_markdown
+from specchoice_evaluation.review import (
+    build_evaluation_packet,
+    build_readiness,
+    render_evaluation_markdown,
+)
+from specchoice_evidence.canonical import canonical_json_bytes
 
 
 EXPERIMENT = Path(__file__).resolve().parents[1]
