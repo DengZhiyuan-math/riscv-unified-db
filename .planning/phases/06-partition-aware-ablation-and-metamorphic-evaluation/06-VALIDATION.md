@@ -29,8 +29,15 @@ created: 2026-08-06
 
 - **After every task commit:** Run the Phase 6 quick command plus isolated Ruff on changed Python files.
 - **After every plan wave:** Run the full focused suite above.
-- **Before `$gsd-verify-work`:** Run the full focused suite, isolated Ruff, `git diff --check`, exact-resume checks, tamper checks, and the separate human review decision gate.
+- **Before `$gsd-verify-work`:** Complete the five-plan topology through Wave 4, including the blocking Plan 05 human decision gate, then run the full focused suite, isolated Ruff, `git diff --check`, exact-resume checks, tamper checks, and hash-bound decision validation.
 - **Max feedback latency:** 60 seconds for the focused suite.
+
+## Execution Topology
+
+- **Plans:** 5 (`06-01` through `06-05`), with one plan in each of Waves 0 through 4.
+- **Automated task coverage:** 10/10 planned tasks have an automated command; `06-05-01` additionally requires a blocking human decision.
+- **Current execution status:** 0/10 task rows are green; the Plan 05 human decision has not been recorded.
+- **Closure rule:** Machine readiness does not imply approval. Phase 6 closes only after an exact-hash `approved` decision with complete responses and no blocking dispute; `disputed` or `incomplete` preserves evidence while keeping Phase 6 open and `conclusion_ready=false`.
 
 ---
 
@@ -46,6 +53,8 @@ created: 2026-08-06
 | 06-03-02 | 03 | 2 | H2-03 | PairHit derives only from preregistered eligible IDs and never ratio-scores an empty Red population | unit + frozen-artifact integration | `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_partition_evaluation.PartitionEvaluationTests.test_pairhit_uses_only_frozen_eligible_ids -q` | ❌ W0 | ⬜ pending |
 | 06-03-03 | 03 | 2 | H2-04 | C-minus-B and B-minus-A populations retain independent identities and denominators | unit | `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_partition_evaluation.PartitionEvaluationTests.test_c_minus_b_population_is_independent -q` | ❌ W0 | ⬜ pending |
 | 06-04-01 | 04 | 3 | TS-06, TS-13 | T-06-05 | Exact-resume publication is create-only; substituted inputs, occupied targets, or unresolved blocking domains fail closed | integration + tamper | `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_partition_evaluation -q` | ❌ W0 | ⬜ pending |
+| 06-05-01 | 05 | 4 | TS-06, TS-13, H1-02, H1-03, H1-04, H2-03, H2-04 | T-06-25, T-06-26, T-06-27, T-06-28, T-06-29, T-06-30 | D-13 through D-16 remain human-controlled: the reviewer chooses only `approved`, `disputed`, or `incomplete` for the exact decision-free packet/readiness hashes, with complete per-domain/per-item responses and no semantic relabeling or authority expansion | integration + hash binding + blocking human decision | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m specchoice_evaluation.cli verify-red-package --repo-root . --policy config/evaluation/partition-evaluation-red-generation-001.json && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_partition_evaluation.PartitionEvaluationTests.test_packet_readiness_are_decision_free_and_hash_bound -q` | ❌ W0 | ⬜ pending — blocking human |
+| 06-05-02 | 05 | 4 | TS-06, TS-13, H1-02, H1-03, H1-04, H2-03, H2-04 | T-06-25, T-06-26, T-06-27, T-06-28, T-06-29, T-06-30, T-06-31 | The separate canonical decision revalidates exact packet/readiness hashes, closed responses, disposition, self-hash, successor-only mutation boundaries, derived conclusion readiness, limited Phase 7 interpretation authority, and create-only exact resume | integration + tamper + exact resume | `cd experiments/specchoice-v1.3.2 && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m specchoice_evaluation.cli validate-decision --repo-root . --policy config/evaluation/partition-evaluation-red-generation-001.json --decision reviews/partition-evaluation-red-generation-001-decision.json && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_partition_evaluation.PartitionEvaluationTests.test_review_decision_requires_exact_hashes_and_closed_responses -q && PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src ../../.venv/bin/python -m unittest tests.test_partition_evaluation -q && ../../.venv/bin/ruff check --isolated src/specchoice_evaluation/review.py src/specchoice_evaluation/cli.py tests/test_partition_evaluation.py` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -63,18 +72,21 @@ created: 2026-08-06
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| Human review decision is bound to the exact decision-free packet and readiness hashes | TS-06, TS-13, H1-02, H1-03, H1-04, H2-03, H2-04 | Machine readiness cannot grant review authority | Inspect branch declaration, applicability matrix, case joins, populations, warnings, failure ledger, and construction-feasibility ordering; approve, dispute, or mark incomplete without relabeling frozen same-version evidence. |
+| Task `06-05-01`: blocking human review decision is bound to the exact decision-free packet and readiness hashes per D-13 through D-16 | TS-06, TS-13, H1-02, H1-03, H1-04, H2-03, H2-04 | Machine readiness cannot grant review authority, select a disposition, or acknowledge the bounded authority grant | After the automated `verify-red-package` and packet/readiness hash-binding test pass, inspect the exact packet/readiness hashes, Red declaration, applicability matrix, case joins, populations and denominators, warnings, failure ledger, four metamorphic directions, PairHit/repeat populations, and construction-feasibility ordering. Return exactly `approved`, `disputed`, or `incomplete` with reviewer identity, complete per-domain/per-item responses, and stable IDs, blocking flags, and non-empty reasons where applicable. Confirm no same-version evidence is relabeled and explicitly acknowledge that approval grants only Phase 7 interpretation of the exact reviewed package—not a narrative, model/provider/retrieval/network/publication, H5, or H6 authority. |
 
 ---
 
 ## Validation Sign-Off
 
-- [ ] All tasks have automated verification or an explicit Wave 0 dependency.
+- [ ] All 10 tasks across Plans 01-05 have automated verification or an explicit Wave 0 dependency.
 - [ ] Sampling continuity: no three consecutive tasks without automated verification.
-- [ ] Wave 0 covers every missing Phase 6 test reference.
+- [ ] Wave 0 covers every missing Phase 6 test reference, including the Plan 05 packet/readiness and decision-validation tests consumed in Wave 4.
 - [ ] No watch-mode flags.
 - [ ] Focused feedback latency remains under 60 seconds.
-- [ ] Human review packet and decision remain separate content-bound artifacts.
+- [ ] The blocking `06-05-01` human decision gate completed against the exact packet/readiness hashes with one allowed disposition, reviewer identity, complete per-domain/per-item responses, and explicit D-16 acknowledgement.
+- [ ] `06-05-02` revalidated the packet/readiness and decision self-hash, rejected stale/substituted/authority-expanding inputs, and derived `conclusion_ready` without accepting it from human input.
+- [ ] Human review packet, machine readiness, and human decision remain separate content-bound artifacts per D-13; D-14 through D-16 disposition, successor, and authority boundaries remain enforced.
+- [ ] Five-plan execution reached Wave 4; Phase 6 closure is recorded only for `approved` with no blocking dispute, while `disputed` or `incomplete` remains valid evidence but not phase sign-off.
 - [ ] `nyquist_compliant: true` is set only after the planned test map is executable.
 
 **Approval:** pending
