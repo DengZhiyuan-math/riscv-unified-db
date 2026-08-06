@@ -17,6 +17,7 @@ from specchoice_evaluation.core import (
     RESULT_STATES,
     ArtifactBinding,
     AtomicResultRow,
+    ConstructionAttempt,
     DimensionBinding,
     FailureRecord,
     MetricResult,
@@ -25,6 +26,7 @@ from specchoice_evaluation.core import (
     WarningRecord,
     build_failure_ledger,
     build_frame_axis_results,
+    build_construction_feasibility,
     build_pairhit_result,
     build_pairwise_comparison,
     build_population_manifest,
@@ -174,6 +176,24 @@ class PartitionEvaluationTests(unittest.TestCase):
         self.assertEqual((), retrieved)
         with self.assertRaisesRegex(Exception, "PAIRHIT_RETRIEVED_CASE_INVALID"):
             build_pairhit_result(EXPERIMENT, {"ambient-case": ("pair-1",)}, bindings)
+
+    def test_construction_feasibility_preserves_attempt_order_and_namespace(self) -> None:
+        attempts = build_construction_feasibility(EXPERIMENT)
+        self.assertGreaterEqual(len(attempts), 10)
+        self.assertEqual(tuple(f"construction-{index:02d}" for index in range(1, len(attempts) + 1)), tuple(item.attempt_id for item in attempts))
+        self.assertEqual(
+            {"rejected", "cancelled", "failed_closed", "superseded", "completed", "successor"},
+            {item.status for item in attempts},
+        )
+        self.assertTrue(all(item.custody_state == "immutable" for item in attempts))
+        self.assertTrue(all(item.source_path.startswith((".planning/", "experiments/")) for item in attempts))
+        self.assertFalse({"numerator", "denominator", "score", "correct", "population_id"} & set(ConstructionAttempt.__dataclass_fields__))
+        with tempfile.TemporaryDirectory() as directory:
+            copied = Path(directory) / "experiment"
+            shutil.copytree(EXPERIMENT, copied)
+            (copied / "receipts/red-execution-v2.json").unlink()
+            with self.assertRaisesRegex(Exception, "CONSTRUCTION_ARTIFACT_INVALID"):
+                build_construction_feasibility(copied)
 
     def test_red_metrics_preserve_applicability_and_separate_denominators(self) -> None:
         bundle = build_red_evaluation(EXPERIMENT)

@@ -59,6 +59,27 @@ _FROZEN_REGISTRY_PATHS = (
     "data/preregistration/split-manifest-v1.json",
     "phase3/data-authority-v1.json",
 )
+_CONSTRUCTION_SOURCES = (
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-00-SUMMARY.md", "completed"),
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-01-SUMMARY.md", "completed"),
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-02-CANCELLATION.md", "rejected"),
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-02-REJECTED.md", "rejected"),
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-03-SUPERSEDED.md", "superseded"),
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-04-SUMMARY.md", "completed"),
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-05-SUMMARY.md", "completed"),
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-06-CANCELLATION.md", "cancelled"),
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-06-FAILED-CLOSED.md", "failed_closed"),
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-07-CANCELLATION.md", "cancelled"),
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-07-FAILED-CLOSED.md", "failed_closed"),
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-08-SUMMARY.md", "completed"),
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-09-SUMMARY.md", "completed"),
+    (".planning/phases/05-authorized-execution-and-immutable-evidence/05-VERIFICATION.md", "completed"),
+    ("experiments/specchoice-v1.3.2/runs/red-execution-v2/attempt-chain.json", "completed"),
+    ("experiments/specchoice-v1.3.2/receipts/red-execution-v2.json", "completed"),
+    ("experiments/specchoice-v1.3.2/runs/native-port-darwin-arm64-20260805/original-whole-binary-sha-mismatch.json", "failed_closed"),
+    ("experiments/specchoice-v1.3.2/runs/native-port-darwin-arm64-projection-v2-20260805/contract-validation.json", "failed_closed"),
+    ("experiments/specchoice-v1.3.2/receipts/native-port-projection-v2-to-v3-custody-successor-v1.json", "successor"),
+)
 
 
 class EvaluationError(ValueError):
@@ -239,6 +260,34 @@ class RepeatComparison:
             or not isinstance(self.agreement, bool)
         ):
             raise EvaluationError("REPEAT_COMPARISON_INVALID")
+
+
+@dataclass(frozen=True)
+class ConstructionAttempt:
+    """Immutable Phase 5 lifecycle evidence, deliberately outside experiment results."""
+
+    attempt_id: str
+    source_path: str
+    source_sha256: str
+    status: str
+    predecessor_id: str | None
+    successor_id: str | None
+    custody_state: str
+    evidence_paths: tuple[str, ...]
+    evidence_sha256: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if (
+            not self.attempt_id
+            or not self.source_path
+            or len(self.source_sha256) != 64
+            or self.status not in {"rejected", "cancelled", "failed_closed", "superseded", "completed", "successor"}
+            or self.custody_state != "immutable"
+            or self.evidence_paths != (self.source_path,)
+            or self.evidence_sha256 != (self.source_sha256,)
+            or any(len(value) != 64 for value in self.evidence_sha256)
+        ):
+            raise EvaluationError("CONSTRUCTION_ATTEMPT_INVALID")
 
 
 _FAILURE_DOMAINS = frozenset({"authority", "join", "construction", "evaluation", "experimental_outcome"})
@@ -951,6 +1000,27 @@ def build_pairhit_result(
         ),
         tuple(rows),
     )
+
+
+def build_construction_feasibility(root: Path) -> tuple[ConstructionAttempt, ...]:
+    """Bind the complete Phase 5 lifecycle without turning it into an experiment."""
+    project_root = root.parents[1]
+    paths = [path for path, _status in _CONSTRUCTION_SOURCES]
+    try:
+        files = read_authoritative_files(project_root, paths)
+    except (FilesystemPolicyError, OSError, ValueError) as error:
+        raise EvaluationError("CONSTRUCTION_ARTIFACT_INVALID") from error
+    attempts: list[ConstructionAttempt] = []
+    for index, (path, status) in enumerate(_CONSTRUCTION_SOURCES, start=1):
+        attempt_id = f"construction-{index:02d}"
+        predecessor_id = None if index == 1 else f"construction-{index - 1:02d}"
+        successor_id = None if index == len(_CONSTRUCTION_SOURCES) else f"construction-{index + 1:02d}"
+        raw = files[path][1]
+        attempts.append(ConstructionAttempt(
+            attempt_id, path, sha256_bytes(raw), status, predecessor_id, successor_id,
+            "immutable", (path,), (sha256_bytes(raw),),
+        ))
+    return tuple(attempts)
 
 
 def _metamorphic_directions(root: Path, bindings: Mapping[str, str]) -> tuple[Mapping[str, object], ...]:
