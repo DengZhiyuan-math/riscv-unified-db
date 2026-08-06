@@ -26,7 +26,6 @@ from specchoice_execution.red_v2 import (
 )
 from specchoice_measurement.diagnostics import Diagnostic, ordered_diagnostics
 
-
 RESULT_STATES = ("measured", "empty_population", "not_applicable_red", "invalid_withheld")
 METRIC_IDS = tuple(sorted((
     "b_minus_a", "c_minus_b", "classify_out", "disposition", "evidence_integrity",
@@ -36,6 +35,10 @@ METRIC_IDS = tuple(sorted((
     "metamorphic_warl_fixed_legal_set", "negative_controls", "pairhit_at_2",
     "repeat_disagreement", "shortcut_family_delta", "surfacing",
 )))
+_ARTIFACT_ROLES = (
+    "gold", "prediction", "prompt", "raw_response", "parsed_response",
+    "evidence_spans", "treatment", "repeat",
+)
 
 _DETERMINISTIC_PATHS = (
     "phase2/source-authority.json",
@@ -52,6 +55,31 @@ _METAMORPHIC_PATHS = (
 
 class EvaluationError(ValueError):
     """Stable failure for a withheld Phase 6 evaluation domain."""
+
+
+@dataclass(frozen=True)
+class ArtifactBinding:
+    """One applicable frozen artifact or a reasoned inapplicable branch."""
+
+    applicable: bool
+    relative_path: str | None
+    sha256: str | None
+    reason: str | None
+
+    def __post_init__(self) -> None:
+        if self.applicable:
+            if (
+                not isinstance(self.relative_path, str) or not self.relative_path
+                or not isinstance(self.sha256, str) or len(self.sha256) != 64
+                or any(character not in "0123456789abcdef" for character in self.sha256)
+                or self.reason is not None
+            ):
+                raise EvaluationError("ARTIFACT_BINDING_INVALID")
+        elif self.relative_path is not None or self.sha256 is not None or not self.reason:
+            raise EvaluationError("ARTIFACT_BINDING_INVALID")
+
+    def as_dict(self) -> dict[str, object]:
+        return asdict(self)
 
 
 @dataclass(frozen=True)
@@ -94,6 +122,62 @@ class AtomicResultRow:
             "repeat_id": asdict(self.repeat_id),
             "treatment": asdict(self.treatment),
         }
+
+
+@dataclass(frozen=True)
+class ClosedJoinManifest:
+    """The exact, all-or-nothing artifact join for one atomic case."""
+
+    join_id: str
+    authority_domain: str
+    partition: str
+    case_id: str
+    gold: ArtifactBinding
+    prediction: ArtifactBinding
+    prompt: ArtifactBinding
+    raw_response: ArtifactBinding
+    parsed_response: ArtifactBinding
+    evidence_spans: ArtifactBinding
+    treatment: ArtifactBinding
+    repeat: ArtifactBinding
+    row_ids: tuple[tuple[str, str, str, str, str, str], ...]
+    status: str
+    diagnostics: tuple[Diagnostic, ...]
+    join_sha256: str
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "authority_domain": self.authority_domain,
+            "case_id": self.case_id,
+            "diagnostics": [item.as_dict() for item in self.diagnostics],
+            "evidence_spans": self.evidence_spans.as_dict(),
+            "gold": self.gold.as_dict(),
+            "join_id": self.join_id,
+            "join_sha256": self.join_sha256,
+            "parsed_response": self.parsed_response.as_dict(),
+            "partition": self.partition,
+            "prediction": self.prediction.as_dict(),
+            "prompt": self.prompt.as_dict(),
+            "raw_response": self.raw_response.as_dict(),
+            "repeat": self.repeat.as_dict(),
+            "row_ids": [list(item) for item in self.row_ids],
+            "status": self.status,
+            "treatment": self.treatment.as_dict(),
+        }
+
+
+@dataclass(frozen=True)
+class PairwiseComparison:
+    """A treatment-specific, independently denominated complete-pair result."""
+
+    comparison_id: str
+    left_treatment: str
+    right_treatment: str
+    intervention: str
+    population_id: str
+    population_sha256: str
+    paired_row_ids: tuple[tuple[tuple[str, str, str, str, str, str], tuple[str, str, str, str, str, str]], ...]
+    result: MetricResult
 
 
 @dataclass(frozen=True)
@@ -207,6 +291,7 @@ class EvaluationBundle:
     metrics: tuple[MetricResult, ...]
     diagnostics: tuple[Diagnostic, ...]
     metamorphic_directions: tuple[Mapping[str, object], ...] = ()
+    pairwise_comparisons: tuple[PairwiseComparison, ...] = ()
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -218,6 +303,19 @@ class EvaluationBundle:
             "metrics": [item.as_dict() for item in self.metrics],
             "n_strict": self.n_strict,
             "no_model_calls": self.no_model_calls,
+            "pairwise_comparisons": [
+                {
+                    "comparison_id": item.comparison_id,
+                    "intervention": item.intervention,
+                    "left_treatment": item.left_treatment,
+                    "paired_row_ids": [[list(left), list(right)] for left, right in item.paired_row_ids],
+                    "population_id": item.population_id,
+                    "population_sha256": item.population_sha256,
+                    "result": item.result.as_dict(),
+                    "right_treatment": item.right_treatment,
+                }
+                for item in self.pairwise_comparisons
+            ],
             "populations": [item.as_dict() for item in self.populations],
             "red_execution_evidence": self.red_execution_evidence.as_dict(),
             "repeat_count": self.repeat_count,
@@ -327,6 +425,137 @@ def _not_applicable(metric_id: str, bindings: Mapping[str, str]) -> MetricResult
     return MetricResult(metric_id, "not_applicable_red", bindings, reason="not_applicable_red: no Green/Yellow observation authority on the frozen Red branch")
 
 
+def close_join(
+    authority_domain: str,
+    partition: str,
+    case_id: str,
+    bindings: Mapping[str, ArtifactBinding],
+    rows: Sequence[AtomicResultRow],
+) -> ClosedJoinManifest:
+    """Close one case only when all D-08 identities are exact and complete."""
+    binding_map = dict(bindings)
+    diagnostics: list[Diagnostic] = []
+    if set(binding_map) != set(_ARTIFACT_ROLES):
+        diagnostics.append(_diagnostic("CLOSED_JOIN_ARTIFACT_SET_INVALID", "join.artifacts"))
+    elif not all(binding_map[role].applicable for role in _ARTIFACT_ROLES):
+        diagnostics.append(_diagnostic("CLOSED_JOIN_ARTIFACT_INAPPLICABLE", "join.artifacts"))
+
+    row_ids = tuple(sorted(row.identity() for row in rows))
+    if len(row_ids) != len(set(row_ids)):
+        diagnostics.append(_diagnostic("CLOSED_JOIN_DUPLICATE_ROW", "join.rows"))
+    if any(
+        row.authority_domain != authority_domain
+        or row.partition != partition
+        or row.case_id != case_id
+        for row in rows
+    ):
+        diagnostics.append(_diagnostic("CLOSED_JOIN_CROSS_PARTITION", "join.rows"))
+    if not rows:
+        diagnostics.append(_diagnostic("CLOSED_JOIN_ROW_MISSING", "join.rows"))
+
+    safe_bindings = {
+        role: binding_map.get(role, ArtifactBinding(False, None, None, "missing_binding"))
+        for role in _ARTIFACT_ROLES
+    }
+    status = "closed" if not diagnostics else "invalid_withheld"
+    basis = {
+        "authority_domain": authority_domain,
+        "bindings": {role: safe_bindings[role].as_dict() for role in _ARTIFACT_ROLES},
+        "case_id": case_id,
+        "partition": partition,
+        "row_ids": [list(row_id) for row_id in row_ids],
+        "status": status,
+    }
+    return ClosedJoinManifest(
+        f"join.{authority_domain}.{partition}.{case_id}", authority_domain, partition, case_id,
+        safe_bindings["gold"], safe_bindings["prediction"], safe_bindings["prompt"],
+        safe_bindings["raw_response"], safe_bindings["parsed_response"],
+        safe_bindings["evidence_spans"], safe_bindings["treatment"], safe_bindings["repeat"],
+        row_ids, status, ordered_diagnostics(diagnostics), sha256_bytes(canonical_json_bytes(basis)),
+    )
+
+
+def build_pairwise_comparison(
+    rows: Sequence[AtomicResultRow],
+    comparison_id: str,
+    control_projections: Mapping[tuple[str, str, str, str, str, str], Mapping[str, object]],
+    *,
+    authority_bindings: Mapping[str, str] | None = None,
+) -> PairwiseComparison:
+    """Build one exact-control B-A or C-B comparison without denominator reuse."""
+    contracts = {
+        "b_minus_a": ("B", "A", "delegation_frame"),
+        "c_minus_b": ("C", "B", "pair_selection"),
+    }
+    if comparison_id not in contracts:
+        raise EvaluationError("PAIRWISE_COMPARISON_INVALID")
+    left_treatment, right_treatment, intervention = contracts[comparison_id]
+    bindings = dict(authority_bindings or {})
+    population_id = f"pairwise.{comparison_id}"
+    if not rows:
+        population_sha256 = sha256_bytes(canonical_json_bytes({"comparison_id": comparison_id, "state": "not_applicable_red"}))
+        return PairwiseComparison(
+            comparison_id, left_treatment, right_treatment, intervention, population_id,
+            population_sha256, (), _not_applicable(comparison_id, bindings),
+        )
+
+    groups: dict[tuple[str, str, str, str], dict[str, AtomicResultRow]] = {}
+    invalid = False
+    for row in rows:
+        if not row.treatment.applicable or not row.repeat_id.applicable:
+            invalid = True
+            continue
+        key = (row.authority_domain, row.partition, row.case_id, row.repeat_id.value or "")
+        treatment = row.treatment.value or ""
+        if treatment not in {left_treatment, right_treatment} or treatment in groups.setdefault(key, {}):
+            invalid = True
+            continue
+        groups[key][treatment] = row
+    paired = []
+    for key in sorted(groups):
+        pair = groups[key]
+        if set(pair) != {left_treatment, right_treatment}:
+            invalid = True
+            continue
+        left, right = pair[left_treatment], pair[right_treatment]
+        left_controls = control_projections.get(left.identity())
+        right_controls = control_projections.get(right.identity())
+        if not isinstance(left_controls, Mapping) or not isinstance(right_controls, Mapping):
+            invalid = True
+            continue
+        if set(left_controls) != set(right_controls) or any(
+            left_controls[name] != right_controls[name]
+            for name in left_controls if name != intervention
+        ):
+            invalid = True
+            continue
+        paired.append((left, right))
+
+    paired_ids = tuple((left.identity(), right.identity()) for left, right in paired)
+    basis = {
+        "comparison_id": comparison_id,
+        "intervention": intervention,
+        "paired_row_ids": [[list(left), list(right)] for left, right in paired_ids],
+    }
+    population_sha256 = sha256_bytes(canonical_json_bytes(basis))
+    if invalid or not paired:
+        diagnostic = _diagnostic("PAIRWISE_CONTROL_OR_CLOSURE_INVALID", comparison_id)
+        result = MetricResult(comparison_id, "invalid_withheld", bindings, blocking_diagnostics=(diagnostic,))
+    else:
+        numerator = sum(
+            int(right.outcome.get("correct") is True and left.outcome.get("correct") is not True)
+            for left, right in paired
+        )
+        result = MetricResult(
+            comparison_id, "measured", bindings, population_id, population_sha256,
+            numerator, len(paired), numerator / len(paired),
+        )
+    return PairwiseComparison(
+        comparison_id, left_treatment, right_treatment, intervention, population_id,
+        population_sha256, paired_ids, result,
+    )
+
+
 def _deterministic_payload(root: Path) -> tuple[list[dict[str, object]], dict[str, object], list[dict[str, object]]]:
     files = read_authoritative_files(root, list(_DETERMINISTIC_PATHS))
     attempt = _canonical_object(files[_DETERMINISTIC_PATHS[1]][1], "DETERMINISTIC_CANONICAL_INVALID")
@@ -428,7 +657,11 @@ def build_red_evaluation(root: Path) -> EvaluationBundle:
                 if metric.metric_id.startswith("metamorphic_") else metric for metric in metrics
             )
         applicability = tuple(metrics)
-        return EvaluationBundle("partition-evaluation-red-v1", "red", 0, 0, True, deterministic, red, applicability, populations, rows, metrics, base_diagnostics, directions)
+        pairwise = tuple(
+            build_pairwise_comparison((), comparison_id, {}, authority_bindings=bindings)
+            for comparison_id in ("b_minus_a", "c_minus_b")
+        )
+        return EvaluationBundle("partition-evaluation-red-v1", "red", 0, 0, True, deterministic, red, applicability, populations, rows, metrics, base_diagnostics, directions, pairwise)
     except (EvaluationError, FilesystemPolicyError, OSError, TypeError, ValueError, json.JSONDecodeError) as error:
         diagnostics = ordered_diagnostics(list(base_diagnostics) + [_diagnostic(str(error), "deterministic_measurement")])
         metrics = tuple(MetricResult(metric_id, "invalid_withheld", bindings, blocking_diagnostics=diagnostics) for metric_id in METRIC_IDS)
