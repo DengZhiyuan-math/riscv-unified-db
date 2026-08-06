@@ -904,6 +904,55 @@ def build_shortcut_family_results(root: Path, bindings: Mapping[str, str]) -> tu
         )
 
 
+def build_pairhit_result(
+    root: Path,
+    retrieved_pair_ids: Mapping[str, Sequence[str]],
+    bindings: Mapping[str, str],
+) -> tuple[PopulationManifest, MetricResult, tuple[Mapping[str, object], ...]]:
+    """Calculate PairHit@2 only from the frozen strict eligible collection."""
+    values, registry_bindings = _frozen_registry_values(root)
+    relevance = values["relevance"]
+    eligible = tuple(relevance["strict_pairhit_eligible_case_ids"])
+    if tuple(sorted(eligible)) != eligible or len(eligible) != len(set(eligible)):
+        raise EvaluationError("PAIRHIT_ELIGIBILITY_INVALID")
+    if set(retrieved_pair_ids) != set(eligible):
+        raise EvaluationError("PAIRHIT_RETRIEVED_CASE_INVALID")
+    population = build_population_manifest("pairhit.at_2", "strict", eligible)
+    bound = dict(sorted({**bindings, **registry_bindings}.items()))
+    if not eligible:
+        return (
+            population,
+            MetricResult("pairhit_at_2", "empty_population", bound, population.population_id, population.set_sha256),
+            (),
+        )
+    relevant_by_case = {
+        str(row["case_id"]): frozenset(str(pair_id) for pair_id in row["relevant_pair_ids"])
+        for row in relevance["strict_rows"]
+    }
+    rows: list[Mapping[str, object]] = []
+    hits = 0
+    for case_id in eligible:
+        observed = tuple(retrieved_pair_ids[case_id])
+        if (
+            len(observed) > 2
+            or len(observed) != len(set(observed))
+            or any(not isinstance(pair_id, str) or not pair_id for pair_id in observed)
+        ):
+            raise EvaluationError("PAIRHIT_RETRIEVED_PAIR_INVALID")
+        if any(pair_id in relevant_by_case[case_id] for pair_id in observed):
+            hits += 1
+        rows.append({"case_id": case_id, "retrieved_pair_ids": list(observed)})
+    return (
+        population,
+        MetricResult(
+            "pairhit_at_2", "measured", bound, population.population_id,
+            population.set_sha256, hits, population.denominator,
+            hits / population.denominator,
+        ),
+        tuple(rows),
+    )
+
+
 def _metamorphic_directions(root: Path, bindings: Mapping[str, str]) -> tuple[Mapping[str, object], ...]:
     return build_metamorphic_results(root, bindings)
 
@@ -959,8 +1008,10 @@ def build_red_evaluation(root: Path) -> EvaluationBundle:
             "identity_missing": MetricResult("identity_missing", "measured", bindings, by_id["identity_missing"].population_id, by_id["identity_missing"].set_sha256, 0, by_id["identity_missing"].denominator, 0.0),
         }
         repeat_population, _observations, _comparisons, repeat_result = build_repeat_results(bindings)
+        pairhit_population, pairhit_result, _retrieved_pairs = build_pairhit_result(root, {}, bindings)
         shortcut_result, metamorphic_results = build_shortcut_family_results(root, bindings)
         non_pair_results = {
+            "pairhit_at_2": pairhit_result,
             "repeat_disagreement": repeat_result,
             "shortcut_family_delta": shortcut_result,
             **{item.metric_id: item for item in metamorphic_results},
@@ -972,7 +1023,7 @@ def build_red_evaluation(root: Path) -> EvaluationBundle:
             build_pairwise_comparison((), comparison_id, {}, authority_bindings=bindings)
             for comparison_id in ("b_minus_a", "c_minus_b")
         )
-        return EvaluationBundle("partition-evaluation-red-v1", "red", 0, 0, True, deterministic, red, applicability, populations + (repeat_population,), rows, metrics, base_diagnostics, directions, pairwise)
+        return EvaluationBundle("partition-evaluation-red-v1", "red", 0, 0, True, deterministic, red, applicability, populations + (pairhit_population, repeat_population), rows, metrics, base_diagnostics, directions, pairwise)
     except (EvaluationError, FilesystemPolicyError, OSError, TypeError, ValueError, json.JSONDecodeError) as error:
         diagnostics = ordered_diagnostics(list(base_diagnostics) + [_diagnostic(str(error), "deterministic_measurement")])
         metrics = tuple(MetricResult(metric_id, "invalid_withheld", bindings, blocking_diagnostics=diagnostics) for metric_id in METRIC_IDS)
