@@ -373,7 +373,7 @@ Plans:
   4. PairHit@K is reported only for preregistered relevance judgments, with retrieved pair IDs per case; strict, auxiliary, metamorphic, and repeat-disagreement outputs retain separate IDs and denominators.
   5. On Red, the reviewer receives only the deterministic measurement and construction-feasibility evaluation, with no absent model outputs presented as experimental zeros or extraction evidence.
 
-**Plans:** 7/10 plans executed
+**Plans:** 14 plans total — 7 complete, 06-08 partially executed then failed closed, 06-09/06-10 superseded unexecuted, 4 forward-only recovery plans pending
 
 Plans:
 
@@ -384,9 +384,13 @@ Plans:
 - [x] 06-05-PLAN.md
 - [x] 06-06-PLAN.md
 - [x] 06-07-PLAN.md
-- [ ] 06-08-PLAN.md
-- [ ] 06-09-PLAN.md
-- [ ] 06-10-PLAN.md
+- 06-08-PLAN.md — Task 1 created generation-002 packet/report/readiness, then Task 2 failed because its required test did not exist; 06-11 preserves the exact bytes and records failed/incomplete status without a summary or decision.
+- 06-09-PLAN.md — superseded unexecuted; generation-002 human review is not authorized.
+- 06-10-PLAN.md — superseded unexecuted; a generation-002 decision must not be created.
+- [ ] 06-11-PLAN.md — preserve generation-002 failed/incomplete custody, add all generation-003 recovery tests before freeze, and freeze the tested generation-003 policy.
+- [ ] 06-12-PLAN.md — publish, independently verify, exact-resume, and adversarially validate the decision-free generation-003 package.
+- [ ] 06-13-PLAN.md — obtain the only new human decision checkpoint over exact generation-003 hashes.
+- [ ] 06-14-PLAN.md — publish the canonical generation-003 decision and derive bounded closure or still-open status.
 
 **Wave 1**
 
@@ -411,19 +415,32 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 06-07: Close verified-join and intervention-score bypasses, then freeze the forward-only generation-002 policy.
+- [x] 06-07: Close verified-join and intervention-score bypasses, then freeze the forward-only generation-002 policy.
 
-**Wave 7** *(blocked on Wave 6 completion)*
+**Wave 7** *(historical partial execution; superseded by Waves 10-13)*
 
-- [ ] 06-08: Publish and independently replay the immutable generation-002 packet, report, and decision-free readiness receipt.
+- 06-08: Publication produced the exact three-file generation-002 set, but the required exact-resume/adversarial test was absent and the frozen test file still required those outputs to be absent. Preserve this as failed/incomplete non-authorizing history; do not rerun or repair it.
 
-**Wave 8** *(blocked on Wave 7 completion)*
+**Waves 8-9** *(superseded without execution by the generation-003 recovery chain)*
 
-- [ ] 06-09: Obtain an explicit human decision over the exact generation-002 hashes; approval is never inferred.
+- 06-09: Do not open a generation-002 human gate.
+- 06-10: Do not publish a generation-002 decision.
 
-**Wave 9** *(blocked on Wave 8 completion)*
+**Wave 10** *(depends on completed 06-07 and the preserved generation-002 partial output state; supersedes 06-08 through 06-10 without rewriting them)*
 
-- [ ] 06-10: Publish the canonical generation-002 decision and derive either clean closure or durable still-open blockers.
+- [ ] 06-11: Bind the exact generation-002 package into failed/incomplete custody, commit all generation-003 package/decision attack tests before policy freeze, then create the Red-only generation-003 policy.
+
+**Wave 11** *(blocked on Wave 10 completion)*
+
+- [ ] 06-12: Publish, verify, exact-resume, and adversarially validate the generation-003 packet/report/readiness set without a decision.
+
+**Wave 12** *(blocked on Wave 11 completion)*
+
+- [ ] 06-13: Present exact generation-003 evidence and require the explicit approved/disputed/incomplete human response; no generation-002 decision is permitted.
+
+**Wave 13** *(blocked on Wave 12 completion)*
+
+- [ ] 06-14: Publish and exact-resume only the generation-003 decision, then close Phase 6 solely on complete clean approval with bounded Phase 7 interpretation authority.
 
 ### Phase 7: Reproducible Feasibility Conclusion
 
