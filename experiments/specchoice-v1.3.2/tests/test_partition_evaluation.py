@@ -15,6 +15,7 @@ from pathlib import Path
 from specchoice_evaluation.cli import main
 from specchoice_evaluation.core import (
     METRIC_IDS,
+    PAIRWISE_INTERVENTION_CONTRACTS,
     RESULT_STATES,
     ArtifactBinding,
     AtomicResultRow,
@@ -158,10 +159,12 @@ class PartitionEvaluationTests(unittest.TestCase):
 
     @staticmethod
     def _pair_controls(rows: list[AtomicResultRow]) -> dict[tuple[str, str, str, str, str, str], dict[str, object]]:
+        delegation = PAIRWISE_INTERVENTION_CONTRACTS["b_minus_a"]["treatment_values"]
+        selection = PAIRWISE_INTERVENTION_CONTRACTS["c_minus_b"]["treatment_values"]
         return {
             row.identity(): {
-                "delegation_frame": "without_frame" if row.treatment.value == "A" else "with_frame",
-                "pair_selection": "other" if row.treatment.value == "C" else "fixed",
+                "delegation_frame": delegation["A"] if row.treatment.value == "A" else delegation["B"],
+                "pair_selection": selection["C"] if row.treatment.value == "C" else selection["B"],
                 "prompt": "same",
             }
             for row in rows
@@ -198,6 +201,38 @@ class PartitionEvaluationTests(unittest.TestCase):
         self.assertEqual("invalid_withheld", comparison.result.state)
         self.assertEqual("PAIRWISE_JOIN_REFERENCE_INVALID", comparison.result.blocking_diagnostics[0].code)
 
+    def test_pairwise_requires_real_named_intervention(self) -> None:
+        rows = [self._row(treatment="A"), self._row(treatment="B")]
+        references = [self._verified_reference(row) for row in rows]
+        controls = self._pair_controls(rows)
+        equal = {identity: dict(value) for identity, value in controls.items()}
+        equal[rows[0].identity()]["delegation_frame"] = equal[rows[1].identity()]["delegation_frame"]
+        for candidate in (equal, {
+            **controls,
+            rows[0].identity(): {**controls[rows[0].identity()], "prompt": "different"},
+        }):
+            comparison = build_pairwise_comparison(references, "b_minus_a", candidate)
+            self.assertEqual("invalid_withheld", comparison.result.state)
+            self.assertEqual("PAIRWISE_INTERVENTION_INVALID", comparison.result.blocking_diagnostics[0].code)
+        self.assertEqual("measured", build_pairwise_comparison(references, "b_minus_a", controls).result.state)
+
+    def test_pairwise_rejects_missing_or_treatment_inconsistent_intervention(self) -> None:
+        rows = [self._row(treatment="B"), self._row(treatment="C")]
+        references = [self._verified_reference(row) for row in rows]
+        controls = self._pair_controls(rows)
+        missing = {identity: dict(value) for identity, value in controls.items()}
+        missing[rows[0].identity()].pop("pair_selection")
+        swapped = {identity: dict(value) for identity, value in controls.items()}
+        values = PAIRWISE_INTERVENTION_CONTRACTS["c_minus_b"]["treatment_values"]
+        swapped[rows[0].identity()]["pair_selection"] = values["C"]
+        swapped[rows[1].identity()]["pair_selection"] = values["B"]
+        unknown = {identity: dict(value) for identity, value in controls.items()}
+        unknown[rows[1].identity()]["pair_selection"] = "unexpected"
+        for candidate in (missing, swapped, unknown):
+            comparison = build_pairwise_comparison(references, "c_minus_b", candidate)
+            self.assertEqual("invalid_withheld", comparison.result.state)
+            self.assertEqual("PAIRWISE_INTERVENTION_INVALID", comparison.result.blocking_diagnostics[0].code)
+
     def test_substituted_closed_join_hash_cannot_measure(self) -> None:
         rows = [self._row(treatment="A"), self._row(treatment="B")]
         controls = self._pair_controls(rows)
@@ -223,16 +258,10 @@ class PartitionEvaluationTests(unittest.TestCase):
             self._row(treatment="A"), self._row(treatment="B"), self._row(treatment="C"),
             self._row(treatment="B", case_id="case-2"), self._row(treatment="C", case_id="case-2"),
         ]
-        controls = {
-            row.identity(): {
-                "delegation_frame": "without_frame" if treatment == "A" else "with_frame",
-                "pair_selection": "other" if treatment == "C" else "fixed",
-                "prompt": "same",
-            }
-            for row, treatment in zip(rows, ("A", "B", "C", "B", "C"), strict=True)
-        }
-        b_minus_a = build_pairwise_comparison(rows[:2], "b_minus_a", controls)
-        c_minus_b = build_pairwise_comparison(rows[1:], "c_minus_b", controls)
+        controls = self._pair_controls(rows)
+        references = [self._verified_reference(row) for row in rows]
+        b_minus_a = build_pairwise_comparison(references[:2], "b_minus_a", controls)
+        c_minus_b = build_pairwise_comparison(references[1:], "c_minus_b", controls)
         self.assertEqual("measured", b_minus_a.result.state)
         self.assertEqual("measured", c_minus_b.result.state)
         self.assertNotEqual(b_minus_a.population_id, c_minus_b.population_id)
