@@ -13,11 +13,11 @@ from pathlib import Path
 
 from specchoice_evaluation.cli import main
 from specchoice_evaluation.core import (
+    METRIC_IDS,
+    RESULT_STATES,
     ArtifactBinding,
     AtomicResultRow,
     DimensionBinding,
-    METRIC_IDS,
-    RESULT_STATES,
     MetricResult,
     build_pairwise_comparison,
     build_population_manifest,
@@ -30,7 +30,6 @@ from specchoice_evaluation.review import (
     render_evaluation_markdown,
 )
 from specchoice_evidence.canonical import canonical_json_bytes
-
 
 EXPERIMENT = Path(__file__).resolve().parents[1]
 
@@ -73,14 +72,17 @@ class PartitionEvaluationTests(unittest.TestCase):
         self.assertEqual("invalid_withheld", cross_partition.status)
 
     def test_c_minus_b_population_is_independent(self) -> None:
-        rows = [self._row(treatment=treatment) for treatment in ("A", "B", "C")]
+        rows = [
+            self._row(treatment="A"), self._row(treatment="B"), self._row(treatment="C"),
+            self._row(treatment="B", case_id="case-2"), self._row(treatment="C", case_id="case-2"),
+        ]
         controls = {
             row.identity(): {
-                "delegation_frame": treatment,
-                "pair_selection": "fixed" if treatment in {"A", "B"} else "other",
+                "delegation_frame": "without_frame" if treatment == "A" else "with_frame",
+                "pair_selection": "other" if treatment == "C" else "fixed",
                 "prompt": "same",
             }
-            for row, treatment in zip(rows, ("A", "B", "C"), strict=True)
+            for row, treatment in zip(rows, ("A", "B", "C", "B", "C"), strict=True)
         }
         b_minus_a = build_pairwise_comparison(rows[:2], "b_minus_a", controls)
         c_minus_b = build_pairwise_comparison(rows[1:], "c_minus_b", controls)
@@ -89,6 +91,17 @@ class PartitionEvaluationTests(unittest.TestCase):
         self.assertNotEqual(b_minus_a.population_id, c_minus_b.population_id)
         self.assertNotEqual(b_minus_a.population_sha256, c_minus_b.population_sha256)
         self.assertNotEqual(b_minus_a.result.denominator, c_minus_b.result.denominator)
+
+    def test_red_pairwise_contracts_are_visible_without_rows_or_ratios(self) -> None:
+        bundle = build_red_evaluation(EXPERIMENT)
+        comparisons = {item.comparison_id: item for item in bundle.pairwise_comparisons}
+        self.assertEqual({"b_minus_a", "c_minus_b"}, set(comparisons))
+        for comparison in comparisons.values():
+            self.assertEqual((), comparison.paired_row_ids)
+            self.assertEqual("not_applicable_red", comparison.result.state)
+            self.assertIsNone(comparison.result.numerator)
+            self.assertIsNone(comparison.result.denominator)
+            self.assertIsNone(comparison.result.score)
 
     def test_red_metrics_preserve_applicability_and_separate_denominators(self) -> None:
         bundle = build_red_evaluation(EXPERIMENT)
