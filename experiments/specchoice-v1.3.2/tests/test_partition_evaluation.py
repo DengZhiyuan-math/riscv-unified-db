@@ -18,11 +18,18 @@ from specchoice_evaluation.core import (
     ArtifactBinding,
     AtomicResultRow,
     DimensionBinding,
+    FailureRecord,
     MetricResult,
+    WarningRecord,
+    build_failure_ledger,
+    build_frame_axis_results,
     build_pairwise_comparison,
     build_population_manifest,
     build_red_evaluation,
+    build_warning_ledger,
     close_join,
+    propagate_blockers,
+    validate_frozen_bindings,
 )
 from specchoice_evaluation.review import (
     build_evaluation_packet,
@@ -102,6 +109,34 @@ class PartitionEvaluationTests(unittest.TestCase):
             self.assertIsNone(comparison.result.numerator)
             self.assertIsNone(comparison.result.denominator)
             self.assertIsNone(comparison.result.score)
+
+    def test_frame_warning_is_report_only(self) -> None:
+        bindings = {"red_execution_evidence": "b" * 64}
+        original = tuple(item.as_dict() for item in build_frame_axis_results(bindings))
+        warning = WarningRecord(
+            "FRAME_COMBINATION_REQUIRES_REVIEW", "evaluation", "advisory", "report_only",
+            "case-1", "outcome-1", "frame-advisory-patterns-v1", "a" * 64,
+        )
+        self.assertEqual((warning,), build_warning_ledger([warning]))
+        self.assertEqual(original, tuple(item.as_dict() for item in build_frame_axis_results(bindings)))
+        with self.assertRaisesRegex(Exception, "WARNING_LEDGER_DUPLICATE"):
+            build_warning_ledger([warning, warning])
+
+    def test_frozen_binding_drift_withholds_dependent_domain(self) -> None:
+        failure = validate_frozen_bindings(
+            {"family": "a" * 64, "prompt": "b" * 64},
+            {"family": "a" * 64, "prompt": "c" * 64},
+            depends_on=("frozen_bindings",),
+        )
+        self.assertIsNotNone(failure)
+        baseline = (
+            MetricResult("frame_authority", "not_applicable_red", {}, reason="not_applicable_red"),
+            MetricResult("surfacing", "not_applicable_red", {}, reason="not_applicable_red"),
+        )
+        withheld = {item.metric_id: item for item in propagate_blockers([failure], baseline)}
+        self.assertEqual("invalid_withheld", withheld["frame_authority"].state)
+        self.assertEqual("not_applicable_red", withheld["surfacing"].state)
+        self.assertFalse(any(item.state != "invalid_withheld" for item in withheld.values() if item.metric_id == "frame_authority"))
 
     def test_red_metrics_preserve_applicability_and_separate_denominators(self) -> None:
         bundle = build_red_evaluation(EXPERIMENT)
