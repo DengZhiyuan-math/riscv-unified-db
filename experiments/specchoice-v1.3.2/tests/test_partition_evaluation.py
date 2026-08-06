@@ -129,6 +129,8 @@ class PartitionEvaluationTests(unittest.TestCase):
             depends_on=("frozen_bindings",),
         )
         self.assertIsNotNone(failure)
+        assert isinstance(failure, FailureRecord)
+        self.assertEqual((failure,), build_failure_ledger([failure]))
         baseline = (
             MetricResult("frame_authority", "not_applicable_red", {}, reason="not_applicable_red"),
             MetricResult("surfacing", "not_applicable_red", {}, reason="not_applicable_red"),

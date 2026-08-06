@@ -180,6 +180,63 @@ class PairwiseComparison:
     result: MetricResult
 
 
+_FAILURE_DOMAINS = frozenset({"authority", "join", "construction", "evaluation", "experimental_outcome"})
+_FAILURE_SEVERITIES = frozenset({"blocking", "advisory"})
+_FAILURE_EFFECTS = frozenset({"withhold_domain", "exclude_case", "report_only"})
+
+
+@dataclass(frozen=True)
+class WarningRecord:
+    """An advisory-only frame pattern record that cannot become score authority."""
+
+    code: str
+    domain: str
+    severity: str
+    effect: str
+    case_id: str
+    outcome_id: str
+    pattern_version: str
+    trigger_evidence_sha256: str
+
+    def __post_init__(self) -> None:
+        if (
+            self.code != "FRAME_COMBINATION_REQUIRES_REVIEW"
+            or self.domain not in _FAILURE_DOMAINS or self.severity != "advisory"
+            or self.effect != "report_only" or not self.case_id or not self.outcome_id
+            or not self.pattern_version or len(self.trigger_evidence_sha256) != 64
+        ):
+            raise EvaluationError("WARNING_RECORD_INVALID")
+
+    def sort_key(self) -> tuple[str, str, str, str, str]:
+        return (self.code, self.case_id, self.outcome_id, self.pattern_version, self.trigger_evidence_sha256)
+
+
+@dataclass(frozen=True)
+class FailureRecord:
+    """A D-09 failure that is categorically distinct from an outcome."""
+
+    code: str
+    domain: str
+    severity: str
+    effect: str
+    subject_id: str
+    evidence_sha256: str
+    depends_on: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if (
+            not self.code or self.domain not in _FAILURE_DOMAINS
+            or self.severity not in _FAILURE_SEVERITIES or self.effect not in _FAILURE_EFFECTS
+            or not self.subject_id or len(self.evidence_sha256) != 64
+            or not self.depends_on or tuple(sorted(self.depends_on)) != self.depends_on
+            or len(set(self.depends_on)) != len(self.depends_on)
+        ):
+            raise EvaluationError("FAILURE_RECORD_INVALID")
+
+    def sort_key(self) -> tuple[str, str, str, str, str]:
+        return (self.domain, self.code, self.subject_id, self.effect, self.evidence_sha256)
+
+
 @dataclass(frozen=True)
 class PopulationManifest:
     population_id: str
@@ -554,6 +611,91 @@ def build_pairwise_comparison(
         comparison_id, left_treatment, right_treatment, intervention, population_id,
         population_sha256, paired_ids, result,
     )
+
+
+DEPENDENCY_GRAPH: Mapping[str, tuple[str, ...]] = {
+    "deterministic_measurement": METRIC_IDS,
+    "frozen_bindings": (
+        "b_minus_a", "c_minus_b", "frame_authority", "frame_choice_object",
+        "frame_choice_space_origin",
+    ),
+    "join": ("b_minus_a", "c_minus_b"),
+    "red_execution_evidence": ("b_minus_a", "c_minus_b", "repeat_disagreement"),
+}
+
+
+def build_warning_ledger(items: Sequence[WarningRecord]) -> tuple[WarningRecord, ...]:
+    """Return the report-only warning ledger in its one canonical order."""
+    ordered = tuple(sorted(items, key=WarningRecord.sort_key))
+    identities = [item.sort_key() for item in ordered]
+    if len(identities) != len(set(identities)):
+        raise EvaluationError("WARNING_LEDGER_DUPLICATE")
+    return ordered
+
+
+def build_failure_ledger(items: Sequence[FailureRecord]) -> tuple[FailureRecord, ...]:
+    """Return stable D-09 failure evidence without reclassifying it as an outcome."""
+    ordered = tuple(sorted(items, key=FailureRecord.sort_key))
+    identities = [item.sort_key() for item in ordered]
+    if len(identities) != len(set(identities)):
+        raise EvaluationError("FAILURE_LEDGER_DUPLICATE")
+    return ordered
+
+
+def build_frame_axis_results(bindings: Mapping[str, str]) -> tuple[MetricResult, ...]:
+    """Expose all frozen frame axes independently, even when Red has no rows."""
+    return tuple(
+        _not_applicable(metric_id, bindings)
+        for metric_id in (
+            "frame_authority", "frame_choice_object", "frame_choice_space_origin",
+        )
+    )
+
+
+def validate_frozen_bindings(
+    expected: Mapping[str, str], observed: Mapping[str, str], *, depends_on: tuple[str, ...],
+) -> FailureRecord | None:
+    """Fail closed on any exact frozen family, label, prompt, or threshold drift."""
+    if dict(expected) == dict(observed):
+        return None
+    evidence_sha256 = sha256_bytes(canonical_json_bytes({"expected": dict(sorted(expected.items())), "observed": dict(sorted(observed.items()))}))
+    return FailureRecord(
+        "FROZEN_BINDING_DRIFT", "authority", "blocking", "withhold_domain",
+        "frozen_bindings", evidence_sha256, tuple(sorted(depends_on)),
+    )
+
+
+def propagate_blockers(
+    failures: Sequence[FailureRecord], metrics: Sequence[MetricResult],
+    *, dependency_graph: Mapping[str, tuple[str, ...]] = DEPENDENCY_GRAPH,
+) -> tuple[MetricResult, ...]:
+    """Withhold only the declared dependency closure; independent metrics survive."""
+    blocking = [
+        item for item in build_failure_ledger(failures)
+        if item.severity == "blocking" and item.effect == "withhold_domain"
+    ]
+    targets: set[str] = set()
+    pending = [node for item in blocking for node in item.depends_on]
+    while pending:
+        node = pending.pop()
+        if node in targets:
+            continue
+        targets.add(node)
+        pending.extend(dependency_graph.get(node, ()))
+    propagated: list[MetricResult] = []
+    for metric in metrics:
+        if metric.metric_id not in targets:
+            propagated.append(metric)
+            continue
+        diagnostics = tuple(
+            _diagnostic(failure.code, failure.subject_id)
+            for failure in blocking if any(node in targets for node in failure.depends_on)
+        )
+        propagated.append(MetricResult(
+            metric.metric_id, "invalid_withheld", metric.authority_bindings,
+            blocking_diagnostics=ordered_diagnostics(list(diagnostics)),
+        ))
+    return tuple(propagated)
 
 
 def _deterministic_payload(root: Path) -> tuple[list[dict[str, object]], dict[str, object], list[dict[str, object]]]:
