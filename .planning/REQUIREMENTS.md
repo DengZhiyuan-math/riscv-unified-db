@@ -36,7 +36,7 @@ Requirements for the frozen SpecChoice v1.3.2 execution baseline. Each maps to e
 - [x] **TS-10** `[ALL]`: A machine-evaluated and human-approved gate records exactly one Green, Yellow, or Red state plus `N_strict` and repeat count, blocks model execution on every Red trigger, and prevents model output from compensating for unreliable gold.
 - [x] **TS-11** `[G/Y]`: The operator can execute every preregistered strict-core case under A, B, and C with the same model snapshot, sampling, target context, shared guidance, decision space, evidence rules, exactly two demonstration pairs, and repeat count; only the intended treatment differs.
 - [x] **TS-12** `[G/Y]`: The reviewer can inspect every call's prompt hash, actual input/output tokens, output limit, model snapshot, sampling settings, raw response, parse result, refusal/truncation state, and retry/failure state, with no missing strict-core A/B/C cell.
-- [ ] **TS-13** `[G/Y]`: The operator can run four frozen, human-reviewed metamorphic minimal pairs covering choice-space origin, true WARL versus fixed legal set, hardware versus software authority, and normative versus NOTE/example language, and report the expected directional relation.
+- [x] **TS-13** `[G/Y]`: The operator can run four frozen, human-reviewed metamorphic minimal pairs covering choice-space origin, true WARL versus fixed legal set, hardware versus software authority, and normative versus NOTE/example language, and report the expected directional relation.
 - [ ] **TS-14** `[ALL]`: The reviewer receives case-level results, branch and split counts, failure taxonomy, limitations, and a bounded positive, negative, or Red feasibility conclusion that makes none of the prohibited statistical, full-corpus, private-pipeline, confirmed-parameter, or merge-readiness claims.
 - [ ] **TS-15** `[ALL]`: Equivalent captured inputs produce byte-identical canonical JSON using UTF-8/LF, NFC normalization, stable array ordering, sorted keys, no absolute paths or timestamps in core reports, content hashes, and exact reproducibility commands.
 
@@ -51,7 +51,7 @@ Requirements for the frozen SpecChoice v1.3.2 execution baseline. Each maps to e
 
 - [x] **H2-01** `[G/Y]`: The human reviewer can approve a bank of complete contrastive pairs in which each unit records positive and contrast passages, shared structure, frames, final statuses, discriminating axes, evidence spans, source provenance, and manual verification, without fabricated quota-filling pairs.
 - [x] **H2-02** `[G/Y]`: The operator can retrieve exactly two complete pairs per controlled target using frozen TF-IDF and cosine-similarity settings, deterministic `pair_id` tie-breaking, target-dependent rankings, and no embeddings, vector database, learned retriever, or learned reranker.
-- [ ] **H2-03** `[G/Y]`: The reviewer can inspect a versioned and hashed relevance registry frozen before retrieval, per-case retrieved pair IDs, and `PairHit@K` calculated only for cases with preregistered human relevance judgments.
+- [x] **H2-03** `[G/Y]`: The reviewer can inspect a versioned and hashed relevance registry frozen before retrieval, per-case retrieved pair IDs, and `PairHit@K` calculated only for cases with preregistered human relevance judgments.
 - [x] **H2-04** `[G/Y]`: The reviewer can compare paired C-minus-B outcomes where B and C share the identical frame, adjudication, context, evidence, model, pair-count, and repeat controls, with complete-pair selection method as the only intended intervention.
 
 ## Acceptance Criteria
@@ -142,7 +142,7 @@ Roadmap creation maps every v1 requirement to exactly one phase.
 | TS-10 | Phase 4 | Complete |
 | TS-11 | Phase 5 | Complete |
 | TS-12 | Phase 5 | Complete |
-| TS-13 | Phase 6 | Pending |
+| TS-13 | Phase 6 | Complete |
 | TS-14 | Phase 7 | Pending |
 | TS-15 | Phase 7 | Pending |
 | H1-01 | Phase 4 | Complete |
@@ -151,7 +151,7 @@ Roadmap creation maps every v1 requirement to exactly one phase.
 | H1-04 | Phase 6 | Complete |
 | H2-01 | Phase 3 | Complete |
 | H2-02 | Phase 4 | Complete |
-| H2-03 | Phase 6 | Pending |
+| H2-03 | Phase 6 | Complete |
 | H2-04 | Phase 6 | Complete |
 
 **Coverage:**
