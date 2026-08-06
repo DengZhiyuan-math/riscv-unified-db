@@ -336,6 +336,61 @@ class PartitionEvaluationTests(unittest.TestCase):
             validate_evaluation_policy(EXPERIMENT, PROJECT, legacy)
         self.assertEqual(before, {path: sha256_bytes((EXPERIMENT / path).read_bytes()) for path in paths})
 
+    def test_component_inventory_is_exact_and_live(self) -> None:
+        policy = self._generation_two_policy()
+        for component_ids in (
+            policy["component_ids"][:-1],
+            [*policy["component_ids"], "unexpected"],
+            [*policy["component_ids"][1:], policy["component_ids"][0]],
+        ):
+            candidate = self._rehash_policy({**policy, "component_ids": component_ids})
+            with self.assertRaisesRegex(Exception, "EVALUATION_POLICY_COMPONENTS_INVALID"):
+                validate_evaluation_policy(EXPERIMENT, PROJECT, candidate)
+        packet = build_evaluation_packet(
+            build_red_evaluation(EXPERIMENT), policy=policy,
+            construction_attempts=build_construction_feasibility(EXPERIMENT, PROJECT, policy["construction_inputs"]),
+        )
+        for mutation in (
+            lambda value: value["components"].pop("warnings"),
+            lambda value: value["components"].__setitem__("unexpected", []),
+            lambda value: value["components"].__setitem__("renamed_metrics", value["components"].pop("metrics")),
+        ):
+            candidate = json.loads(canonical_json_bytes(packet))
+            mutation(candidate)
+            candidate["component_sha256"] = {
+                name: sha256_bytes(canonical_json_bytes(value))
+                for name, value in sorted(candidate["components"].items())
+            }
+            candidate["component_set_sha256"] = sha256_bytes(canonical_json_bytes(candidate["component_sha256"]))
+            candidate.pop("packet_sha256")
+            candidate["packet_sha256"] = sha256_bytes(canonical_json_bytes(candidate))
+            with self.assertRaisesRegex(Exception, "EVALUATION_PACKET_COMPONENTS_INVALID"):
+                validate_evaluation_packet(EXPERIMENT, PROJECT, policy, candidate)
+
+    def test_runtime_policy_error_is_stable_and_traceback_free(self) -> None:
+        policy = self._generation_two_policy()
+        policy["inputs"] = [
+            item for item in policy["inputs"]
+            if item["path"] != policy["runtime_closure"]["path"]
+        ]
+        policy = self._rehash_policy(policy)
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as policy_file:
+            json.dump(policy, policy_file)
+            path = Path(policy_file.name)
+        try:
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                code = main([
+                    "verify-red-package", "--experiment-root", str(EXPERIMENT), "--project-root", str(PROJECT),
+                    "--policy", str(path),
+                ])
+            self.assertEqual(2, code)
+            self.assertIn("EVALUATION_POLICY_RUNTIME_INVALID", stderr.getvalue())
+            self.assertNotIn("Traceback", stderr.getvalue())
+            self.assertEqual("", stdout.getvalue())
+        finally:
+            path.unlink()
+
     def test_red_metrics_preserve_applicability_and_separate_denominators(self) -> None:
         bundle = build_red_evaluation(EXPERIMENT)
         packet = build_evaluation_packet(bundle)
