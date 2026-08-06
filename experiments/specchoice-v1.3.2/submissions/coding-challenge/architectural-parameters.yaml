@@ -1,0 +1,119 @@
+schema_version: riscv-architectural-parameter-extraction-v1
+results:
+  - source:
+      specification: RISC-V Privileged ISA Manual
+      section: "19.3.1"
+    status: parameter_found
+    parameters:
+      - name: CACHE_BLOCK_SIZE
+        name_status: existing_udb_verified
+        name_source: spec/std/isa/param/CACHE_BLOCK_SIZE.yaml
+        source_phrase: size of a cache block
+        description: >-
+          Size of the contiguous, naturally aligned power-of-two range
+          represented by one cache block.
+        type: integer
+        type_support: inferred_from_power_of_two_range
+        units: null
+        constraints:
+          implementation_specific: true
+          power_of_two: true
+          naturally_aligned: true
+          uniform_throughout_system: true
+          uniformity_scope: initial set of CMO extensions
+          maximum: null
+        evidence:
+          - >-
+            Caches organize copies of data into cache blocks, each of which
+            represents a contiguous, naturally aligned power-of-two (or NAPOT)
+            range of memory locations.
+          - >-
+            The capacity and organization of a cache and the size of a cache
+            block are both implementation-specific
+          - >-
+            In the initial set of CMO extensions, the size of a cache block
+            shall be uniform throughout the system.
+    review_candidates:
+      - candidate_label: cache capacity
+        proposed_name: null
+        source_phrase: capacity of a cache
+        description: Capacity of a cache.
+        type: unspecified
+        units: null
+        constraints:
+          implementation_specific: true
+        scope_assessment: unresolved
+        scope_question: architectural_vs_microarchitectural
+        review_reason: >-
+          The property is explicitly implementation-specific, but this snippet
+          does not define its unit, representation, scope across multiple
+          caches, legal domain, or whether it belongs in an architectural rather
+          than microarchitectural parameter model.
+        evidence:
+          - >-
+            The capacity and organization of a cache and the size of a cache
+            block are both implementation-specific
+      - candidate_label: cache organization
+        proposed_name: null
+        source_phrase: organization of a cache
+        description: Organization of a cache.
+        type: unspecified
+        units: null
+        constraints:
+          implementation_specific: true
+        scope_assessment: unresolved
+        scope_question: architectural_vs_microarchitectural
+        review_reason: >-
+          The property is explicitly implementation-specific, but this snippet
+          does not define the fields, legal values, or whether the property
+          belongs in an architectural rather than microarchitectural parameter
+          model.
+        evidence:
+          - >-
+            The capacity and organization of a cache and the size of a cache
+            block are both implementation-specific
+    non_parameters:
+      - text: cache-block-size uniformity
+        reason: >-
+          This is a constraint on CACHE_BLOCK_SIZE and does not introduce an
+          independent implementation choice.
+        evidence:
+          - >-
+            In the initial set of CMO extensions, the size of a cache block
+            shall be uniform throughout the system.
+
+  - source:
+      specification: RISC-V Privileged ISA Manual
+      section: "2.1"
+    status: no_parameter
+    parameters: []
+    review_candidates: []
+    non_parameters:
+      - text: CSR address width
+        observed_value: 12
+        reason: The ISA fixes the encoding width; the implementation does not choose it.
+        evidence:
+          - >-
+            The standard RISC-V ISA sets aside a 12-bit encoding space
+            (csr[11:0]) for up to 4,096 CSRs.
+      - text: maximum CSR encodings
+        observed_value: 4096
+        reason: This value is derived from the fixed 12-bit encoding space.
+        evidence:
+          - >-
+            The standard RISC-V ISA sets aside a 12-bit encoding space
+            (csr[11:0]) for up to 4,096 CSRs.
+      - text: CSR read/write accessibility encoding
+        observed_value: "csr[11:10]"
+        reason: The ISA fixes the meaning of these address bits.
+        evidence:
+          - >-
+            The top two bits (csr[11:10]) indicate whether the register is
+            read/write (00, 01, or 10) or read-only (11).
+      - text: CSR minimum privilege encoding
+        observed_value: "csr[9:8]"
+        reason: The ISA fixes the meaning of these address bits.
+        evidence:
+          - >-
+            The next two bits (csr[9:8]) encode the lowest privilege level that
+            can access the CSR.
