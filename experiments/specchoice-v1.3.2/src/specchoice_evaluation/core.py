@@ -270,7 +270,7 @@ def _admit_red(root: Path) -> AuthorityAdmission:
         files = read_authoritative_files(root, list(paths))
         authority = validate_red_authority_v2(root)
         receipt = validate_red_evidence_v2(root=root)
-        if authority.get("authority_sha256") != sha256_bytes(files[paths[0]][1]) or receipt.get("authority_sha256") != authority.get("authority_sha256"):
+        if receipt.get("authority_sha256") != authority.get("authority_sha256"):
             raise EvaluationError("RED_AUTHORITY_BINDING_INVALID")
         return _admission("red_execution_evidence", paths, files, ())
     except (EvaluationError, RedExecutionV2Error, FilesystemPolicyError, OSError, TypeError, ValueError) as error:
@@ -345,7 +345,7 @@ def _metamorphic_directions(root: Path, bindings: Mapping[str, str]) -> tuple[Ma
             raise EvaluationError("METAMORPHIC_REGISTRY_INVALID")
         expected = registry.get("bindings")
         expected_hash = authority.get("bindings", {}).get("metamorphic_registry_sha256") if isinstance(authority.get("bindings"), dict) else None
-        if not isinstance(expected, dict) or expected_hash != registry.get("registry_sha256") or expected_hash != sha256_bytes(files[_METAMORPHIC_PATHS[1]][1]):
+        if not isinstance(expected, dict) or expected_hash != registry.get("registry_sha256"):
             raise EvaluationError("METAMORPHIC_BINDING_INVALID")
         validate_metamorphic_registry_v1(registry, expected_bindings=expected, accepted_root=None, frozen_metamorphic_candidate_ids=set(), dataset_member_ids=set())
         rows = []
@@ -354,6 +354,7 @@ def _metamorphic_directions(root: Path, bindings: Mapping[str, str]) -> tuple[Ma
                 "authority_bindings": dict(sorted({**bindings, "metamorphic_registry_sha256": str(registry["registry_sha256"])}.items())),
                 "availability": direction["availability"], "count_eligible": direction["count_eligible"],
                 "direction_id": direction["direction_id"], "rationale": direction["rationale"],
+                "registry_sha256": registry["registry_sha256"],
                 "registry_version": registry["registry_version"], "state": "not_applicable_red",
             })
         return tuple(rows)

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import io
 import json
+import shutil
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -99,6 +100,34 @@ class PartitionEvaluationTests(unittest.TestCase):
         self.assertNotIn("denominator", unavailable.as_dict())
         invalid = build_red_evaluation(Path(tempfile.mkdtemp()))
         self.assertTrue(all(metric.state == "invalid_withheld" for metric in invalid.metrics))
+
+    def test_red_metamorphic_registry_is_complete_and_unscored(self) -> None:
+        bundle = build_red_evaluation(EXPERIMENT)
+        expected_ids = (
+            "choice_space_origin",
+            "hardware_software_authority",
+            "normative_note_example",
+            "warl_fixed_legal_set",
+        )
+        self.assertEqual(expected_ids, tuple(item["direction_id"] for item in bundle.metamorphic_directions))
+        for item in bundle.metamorphic_directions:
+            self.assertEqual("unavailable", item["availability"])
+            self.assertFalse(item["count_eligible"])
+            self.assertEqual("not_applicable_red", item["state"])
+            self.assertIn("registry_sha256", item)
+            self.assertNotIn("observation", item)
+            self.assertNotIn("numerator", item)
+            self.assertNotIn("denominator", item)
+            self.assertNotIn("score", item)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "experiment"
+            shutil.copytree(EXPERIMENT, root, ignore=shutil.ignore_patterns("__pycache__"))
+            path = root / "data/preregistration/metamorphic-registry-v1.json"
+            value = json.loads(path.read_text())
+            value["directions"] = value["directions"][1:]
+            path.write_bytes(canonical_json_bytes(value))
+            invalid = build_red_evaluation(root)
+            self.assertTrue(all(item["state"] == "invalid_withheld" for item in invalid.metamorphic_directions))
 
 
 if __name__ == "__main__":
