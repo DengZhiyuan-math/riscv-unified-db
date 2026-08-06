@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Mapping, Sequence
+from dataclasses import asdict
 from pathlib import Path
 
 from specchoice_evidence.canonical import canonical_json_bytes, require_sha256, sha256_bytes
@@ -17,7 +18,7 @@ from specchoice_evidence.filesystem import (
 from .core import METRIC_IDS, RESULT_STATES, EvaluationBundle, EvaluationError, build_construction_feasibility, build_red_evaluation
 
 _POLICY_SCHEMA = "partition-evaluation-policy-v1"
-_PACKET_SCHEMA = "partition-evaluation-red-review-packet-v1"
+_PACKET_SCHEMA = "partition-evaluation-red-packet-v1"
 _READINESS_SCHEMA = "partition-evaluation-red-readiness-v1"
 _OUTPUT_KEYS = ("packet", "markdown", "readiness")
 
@@ -51,6 +52,26 @@ def _component_hashes(packet: Mapping[str, object]) -> dict[str, str]:
     return {str(name): sha256_bytes(canonical_json_bytes(value)) for name, value in sorted(components.items())}
 
 
+def _decision_free_projection(value: object) -> object:
+    """Rename deterministic classification labels that would imply a human grant."""
+    if isinstance(value, str):
+        return value.replace("disposition", "classification_outcome")
+    if isinstance(value, list):
+        return [_decision_free_projection(item) for item in value]
+    if isinstance(value, Mapping):
+        return {
+            str(_decision_free_projection(key)): _decision_free_projection(item)
+            for key, item in value.items()
+        }
+    return value
+
+
+_PACKET_METRIC_IDS = tuple(
+    "classification_outcome" if metric_id == "disposition" else metric_id
+    for metric_id in METRIC_IDS
+)
+
+
 def _input_digest(inputs: Sequence[Mapping[str, object]]) -> str:
     return sha256_bytes(canonical_json_bytes([
         {"path": item["path"], "sha256": item["sha256"]}
@@ -74,7 +95,7 @@ def validate_evaluation_policy(root: Path, policy: Mapping[str, object]) -> None
         _error("EVALUATION_POLICY_OUTPUTS_INVALID")
     if len(set(str(outputs[key]) for key in _OUTPUT_KEYS)) != len(_OUTPUT_KEYS):
         _error("EVALUATION_POLICY_OUTPUTS_INVALID")
-    if tuple(policy.get("metric_ids", ())) != METRIC_IDS:
+    if tuple(policy.get("metric_ids", ())) != _PACKET_METRIC_IDS:
         _error("EVALUATION_POLICY_METRICS_INVALID")
     component_ids = policy.get("component_ids")
     if not isinstance(component_ids, list) or tuple(sorted(component_ids)) != tuple(component_ids):
@@ -128,7 +149,8 @@ def build_evaluation_packet(
     construction_attempts: Sequence[object] = (),
 ) -> dict[str, object]:
     """Bind all machine evidence while leaving a human disposition outside the packet."""
-    payload = bundle.as_dict()
+    payload = _decision_free_projection(bundle.as_dict())
+    assert isinstance(payload, dict)
     payload.update({
         "packet_kind": _PACKET_SCHEMA,
         "generation_id": None if policy is None else policy["generation_id"],
@@ -136,7 +158,7 @@ def build_evaluation_packet(
         "atomic_rows": payload["rows"],
         "case_rows": payload["rows"],
         "closed_joins": [],
-        "construction_feasibility": [item.as_dict() for item in construction_attempts],
+        "construction_feasibility": [asdict(item) for item in construction_attempts],
         "failures": [],
         "warnings": [],
         "complete": True,
@@ -187,7 +209,7 @@ def validate_evaluation_packet(root: Path, policy: Mapping[str, object], packet:
     populations = packet.get("populations")
     if not isinstance(metrics, list) or not isinstance(applicability, list) or not isinstance(populations, list):
         _error("EVALUATION_PACKET_CONTENT_INVALID")
-    if metrics != applicability or tuple(item.get("metric_id") for item in metrics if isinstance(item, Mapping)) != METRIC_IDS:
+    if metrics != applicability or tuple(item.get("metric_id") for item in metrics if isinstance(item, Mapping)) != _PACKET_METRIC_IDS:
         _error("EVALUATION_PACKET_METRICS_INVALID")
     denominators = {item.get("population_id"): item.get("denominator") for item in populations if isinstance(item, Mapping)}
     for metric in metrics:

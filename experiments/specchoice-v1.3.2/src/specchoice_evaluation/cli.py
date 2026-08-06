@@ -42,7 +42,7 @@ def _load_policy(path: str) -> dict[str, object]:
 
 
 def _build_red(args: argparse.Namespace) -> int:
-    root, policy = Path(args.repo_root), _load_policy(args.policy)
+    root, policy = Path(args.repo_root).resolve(), _load_policy(args.policy)
     # Preserve the pre-publication diagnostic surface used by the earlier Phase 6 contract.
     if set(policy) == {"schema_version"}:
         bundle = build_red_evaluation(root)
@@ -59,7 +59,7 @@ def _build_red(args: argparse.Namespace) -> int:
 
 
 def _verify_red_package(args: argparse.Namespace) -> int:
-    root, policy = Path(args.repo_root), _load_policy(args.policy)
+    root, policy = Path(args.repo_root).resolve(), _load_policy(args.policy)
     validate_evaluation_policy(root, policy)
     outputs = policy["outputs"]
     assert isinstance(outputs, dict)
