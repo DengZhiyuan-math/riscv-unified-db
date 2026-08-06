@@ -105,6 +105,27 @@ CONSTRUCTION_SOURCE_CONTRACT = (
     ("experiments/specchoice-v1.3.2/runs/native-port-darwin-arm64-projection-v2-20260805/contract-validation.json", "failed_closed"),
     ("experiments/specchoice-v1.3.2/receipts/native-port-projection-v2-to-v3-custody-successor-v1.json", "successor"),
 )
+CONSTRUCTION_SOURCE_SHA256 = MappingProxyType({
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-00-SUMMARY.md": "13e7d8b0cd3537e7f3b94af001b5d018c86fa4868a92891fce5d0d42fd30937b",
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-01-SUMMARY.md": "273d774009f6e264a8c516db492225ec60c9d28850152645675209471741d671",
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-02-CANCELLATION.md": "c4a9669166d9e4ea40b41ac268a6ff7286dc2b9ff1a831789f2571910fbcbc47",
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-02-REJECTED.md": "5d504c94e4737ed64cca9c02b5d52f74c3ddbf3f7159cd68c12aa81919e94ef4",
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-03-SUPERSEDED.md": "25f22a52d17c6f13639829875d27008a57b78cf8521457a80aa32943755abbfb",
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-04-SUMMARY.md": "238fb787884327bee57012527326f239317012e6843cd654dbf4235a7125bb14",
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-05-SUMMARY.md": "0559b30ab81eb00e4d07878ce926780a7fe694f09d7ae120e1ca703a08801b64",
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-06-CANCELLATION.md": "0c867eac841c6f911591729dc11c210ae200047724765da27f2a2f5992098915",
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-06-FAILED-CLOSED.md": "010075d58b77688284c7ff3c3113cdd3c22aae5d331998d667a9c6eb8f68655c",
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-07-CANCELLATION.md": "f24614374af20be1e030623f775252aa447afc69f45352106c795a243db35482",
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-07-FAILED-CLOSED.md": "d2467c055a1094fafffda069479830c094bf8f735a6a8b5798ac19bb44824ffb",
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-08-SUMMARY.md": "aa8c6f67d9472bc1b13b94927cdf59067fb6c71ad03bc63084ba012132798f6e",
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-09-SUMMARY.md": "ad8761ad4dc28a73f08bd0d13628b3118e99f29dc0a380c5fc06a66448efc2ac",
+    ".planning/phases/05-authorized-execution-and-immutable-evidence/05-VERIFICATION.md": "7fdcdeeb94744653b2fe854a87b21688d9bd7bdc829ed53b61e7be3be1aeb7ef",
+    "experiments/specchoice-v1.3.2/runs/red-execution-v2/attempt-chain.json": "b3aa133ef136d5a6c4499db59ee163f1dee1fdf6d373913f1d3735af55230986",
+    "experiments/specchoice-v1.3.2/receipts/red-execution-v2.json": "d46a965d94c94dc38a253f05d874aa8c2de5e987b87aa73a7bf45ddcddec4d6b",
+    "experiments/specchoice-v1.3.2/runs/native-port-darwin-arm64-20260805/original-whole-binary-sha-mismatch.json": "bc14732db77ac0d987d61696e7b36a98b6b941bdfc0486196e868d3404f1bbe2",
+    "experiments/specchoice-v1.3.2/runs/native-port-darwin-arm64-projection-v2-20260805/contract-validation.json": "7f6d0761ccdb775ddb62e13ca641dd389819e587acaf29ca4f805f0ab502a1fd",
+    "experiments/specchoice-v1.3.2/receipts/native-port-projection-v2-to-v3-custody-successor-v1.json": "9ad5622650a4511efc239dc90750a7f765364093e32d58a05457f055dd4168ce",
+})
 
 
 class EvaluationError(ValueError):
@@ -1107,7 +1128,10 @@ def build_construction_feasibility(
             normalized.append((path, status, require_sha256(digest)))
         except ValueError as error:
             raise EvaluationError("CONSTRUCTION_SOURCE_CONTRACT_INVALID") from error
-    if tuple((path, status) for path, status, _digest in normalized) != CONSTRUCTION_SOURCE_CONTRACT:
+    if (
+        tuple((path, status) for path, status, _digest in normalized) != CONSTRUCTION_SOURCE_CONTRACT
+        or tuple(digest for _path, _status, digest in normalized) != tuple(CONSTRUCTION_SOURCE_SHA256.values())
+    ):
         raise EvaluationError("CONSTRUCTION_SOURCE_CONTRACT_INVALID")
     paths = [path for path, _status, _digest in normalized]
     try:

@@ -69,44 +69,9 @@ class PartitionEvaluationTests(unittest.TestCase):
     def _generation_two_policy(
         self, experiment_root: Path = EXPERIMENT, project_root: Path = PROJECT,
     ) -> dict[str, object]:
-        """Build an in-memory successor policy without publishing it."""
-        legacy = json.loads((experiment_root / "config/evaluation/partition-evaluation-red-generation-001.json").read_text())
-        construction = [
-            {"path": path, "status": status, "sha256": sha256_bytes((project_root / path).read_bytes())}
-            for path, status in (
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-00-SUMMARY.md", "completed"),
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-01-SUMMARY.md", "completed"),
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-02-CANCELLATION.md", "rejected"),
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-02-REJECTED.md", "rejected"),
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-03-SUPERSEDED.md", "superseded"),
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-04-SUMMARY.md", "completed"),
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-05-SUMMARY.md", "completed"),
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-06-CANCELLATION.md", "cancelled"),
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-06-FAILED-CLOSED.md", "failed_closed"),
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-07-CANCELLATION.md", "cancelled"),
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-07-FAILED-CLOSED.md", "failed_closed"),
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-08-SUMMARY.md", "completed"),
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-09-SUMMARY.md", "completed"),
-                (".planning/phases/05-authorized-execution-and-immutable-evidence/05-VERIFICATION.md", "completed"),
-                ("experiments/specchoice-v1.3.2/runs/red-execution-v2/attempt-chain.json", "completed"),
-                ("experiments/specchoice-v1.3.2/receipts/red-execution-v2.json", "completed"),
-                ("experiments/specchoice-v1.3.2/runs/native-port-darwin-arm64-20260805/original-whole-binary-sha-mismatch.json", "failed_closed"),
-                ("experiments/specchoice-v1.3.2/runs/native-port-darwin-arm64-projection-v2-20260805/contract-validation.json", "failed_closed"),
-                ("experiments/specchoice-v1.3.2/receipts/native-port-projection-v2-to-v3-custody-successor-v1.json", "successor"),
-            )
-        ]
-        policy = {
-            **legacy,
-            "schema_version": "partition-evaluation-policy-v2",
-            "generation_id": "partition-evaluation-red-generation-002",
-            "construction_inputs": construction,
-            "outputs": {
-                "markdown": "runs/partition-evaluation-red-generation-002/evaluation-report.md",
-                "packet": "runs/partition-evaluation-red-generation-002/evaluation-packet.json",
-                "readiness": "receipts/partition-evaluation-red-generation-002-readiness.json",
-            },
-        }
-        return self._rehash_policy(policy)
+        """Load the frozen successor policy without creating its outputs."""
+        del project_root
+        return json.loads((experiment_root / "config/evaluation/partition-evaluation-red-generation-002.json").read_text())
 
     def _copy_project(self, directory: str) -> tuple[Path, Path]:
         project = Path(directory) / "project"
@@ -427,6 +392,40 @@ class PartitionEvaluationTests(unittest.TestCase):
         with self.assertRaisesRegex(Exception, "EVALUATION_POLICY_LEGACY_GENERATION"):
             validate_evaluation_policy(EXPERIMENT, PROJECT, legacy)
         self.assertEqual(before, {path: sha256_bytes((EXPERIMENT / path).read_bytes()) for path in paths})
+
+    def test_generation_002_policy_freezes_fixed_code_construction_and_predecessor(self) -> None:
+        policy = self._generation_two_policy()
+        validate_evaluation_policy(EXPERIMENT, PROJECT, policy)
+        self.assertEqual("partition-evaluation-red-generation-002", policy["generation_id"])
+        self.assertEqual(19, len(policy["construction_inputs"]))
+        source_paths = (
+            "src/specchoice_evaluation/__init__.py",
+            "src/specchoice_evaluation/cli.py",
+            "src/specchoice_evaluation/core.py",
+            "src/specchoice_evaluation/review.py",
+            "tests/test_partition_evaluation.py",
+        )
+        inputs = {item["path"]: item["sha256"] for item in policy["inputs"]}
+        self.assertTrue(all(inputs[path] == sha256_bytes((EXPERIMENT / path).read_bytes()) for path in source_paths))
+        self.assertEqual({
+            "policy": "partition-evaluation-policy-v2",
+            "packet": "partition-evaluation-red-packet-v2",
+            "readiness": "partition-evaluation-red-readiness-v2",
+            "decision": "partition-evaluation-review-decision-v1",
+        }, policy["generation_schema_identities"])
+        predecessor = policy["predecessor_generation"]
+        self.assertEqual("superseded_derivation_history_non_authorizing", predecessor["status"])
+        self.assertEqual("partition-evaluation-red-generation-001", predecessor["generation_id"])
+        self.assertEqual(5, len(predecessor["artifacts"]))
+        for artifact in predecessor["artifacts"]:
+            self.assertEqual(sha256_bytes((EXPERIMENT / artifact["path"]).read_bytes()), artifact["sha256"])
+        self.assertEqual({
+            "markdown": "runs/partition-evaluation-red-generation-002/evaluation-report.md",
+            "packet": "runs/partition-evaluation-red-generation-002/evaluation-packet.json",
+            "readiness": "receipts/partition-evaluation-red-generation-002-readiness.json",
+        }, policy["outputs"])
+        for path in (*policy["outputs"].values(), "reviews/partition-evaluation-red-generation-002-decision.json"):
+            self.assertFalse((EXPERIMENT / path).exists())
 
     def test_component_inventory_is_exact_and_live(self) -> None:
         policy = self._generation_two_policy()
