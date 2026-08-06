@@ -12,7 +12,13 @@ from pathlib import Path
 
 from specchoice_evidence.canonical import canonical_json_bytes
 from specchoice_evaluation.cli import main
-from specchoice_evaluation.core import METRIC_IDS, RESULT_STATES, build_red_evaluation
+from specchoice_evaluation.core import (
+    METRIC_IDS,
+    RESULT_STATES,
+    MetricResult,
+    build_population_manifest,
+    build_red_evaluation,
+)
 from specchoice_evaluation.review import build_evaluation_packet, build_readiness, render_evaluation_markdown
 
 
@@ -71,6 +77,28 @@ class PartitionEvaluationTests(unittest.TestCase):
             self.assertEqual("red", json.loads(stdout.getvalue())["branch"])
         finally:
             policy.unlink()
+
+    def test_result_states_and_population_order_are_not_interchangeable(self) -> None:
+        first = build_population_manifest("test.population", "formal", ["case-b", "case-a"])
+        second = build_population_manifest("test.population", "formal", ["case-a", "case-b"])
+        self.assertEqual(first, second)
+        measured_zero = MetricResult(
+            "identity_incorrect", "measured", {"deterministic_measurement": "a" * 64},
+            first.population_id, first.set_sha256, 0, first.denominator, 0.0,
+        )
+        empty = MetricResult(
+            "pairhit_at_2", "empty_population", {"red_execution_evidence": "b" * 64},
+            first.population_id, first.set_sha256,
+        )
+        unavailable = MetricResult(
+            "b_minus_a", "not_applicable_red", {"red_execution_evidence": "b" * 64},
+            reason="not_applicable_red",
+        )
+        self.assertEqual(0.0, measured_zero.score)
+        self.assertNotIn("score", empty.as_dict())
+        self.assertNotIn("denominator", unavailable.as_dict())
+        invalid = build_red_evaluation(Path(tempfile.mkdtemp()))
+        self.assertTrue(all(metric.state == "invalid_withheld" for metric in invalid.metrics))
 
 
 if __name__ == "__main__":
