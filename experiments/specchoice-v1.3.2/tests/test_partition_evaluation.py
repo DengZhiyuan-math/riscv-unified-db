@@ -13,11 +13,16 @@ from pathlib import Path
 
 from specchoice_evaluation.cli import main
 from specchoice_evaluation.core import (
+    ArtifactBinding,
+    AtomicResultRow,
+    DimensionBinding,
     METRIC_IDS,
     RESULT_STATES,
     MetricResult,
+    build_pairwise_comparison,
     build_population_manifest,
     build_red_evaluation,
+    close_join,
 )
 from specchoice_evaluation.review import (
     build_evaluation_packet,
@@ -31,6 +36,60 @@ EXPERIMENT = Path(__file__).resolve().parents[1]
 
 
 class PartitionEvaluationTests(unittest.TestCase):
+    @staticmethod
+    def _binding(role: str) -> ArtifactBinding:
+        return ArtifactBinding(True, f"frozen/{role}.json", "a" * 64, None)
+
+    @staticmethod
+    def _row(*, treatment: str, case_id: str = "case-1", partition: str = "strict") -> AtomicResultRow:
+        return AtomicResultRow(
+            "evaluation", partition, case_id,
+            treatment=DimensionBinding(True, treatment, None),
+            repeat_id=DimensionBinding(True, "repeat-1", None),
+            outcome_id="outcome-1",
+            outcome={"correct": True},
+        )
+
+    def test_pair_join_rejects_missing_duplicate_and_cross_partition_rows(self) -> None:
+        bindings = {role: self._binding(role) for role in (
+            "gold", "prediction", "prompt", "raw_response", "parsed_response",
+            "evidence_spans", "treatment", "repeat",
+        )}
+        good = self._row(treatment="B")
+        closed = close_join("evaluation", "strict", "case-1", bindings, [good])
+        self.assertEqual("closed", closed.status)
+        self.assertEqual((), closed.diagnostics)
+        self.assertEqual(closed.join_sha256, close_join("evaluation", "strict", "case-1", bindings, [good]).join_sha256)
+        for changed in (
+            {key: value for key, value in bindings.items() if key != "prompt"},
+            {**bindings, "unexpected": self._binding("unexpected")},
+        ):
+            invalid = close_join("evaluation", "strict", "case-1", changed, [good])
+            self.assertEqual("invalid_withheld", invalid.status)
+            self.assertTrue(invalid.diagnostics)
+        duplicate = close_join("evaluation", "strict", "case-1", bindings, [good, good])
+        cross_partition = close_join("evaluation", "strict", "case-1", bindings, [good, self._row(treatment="A", partition="auxiliary")])
+        self.assertEqual("invalid_withheld", duplicate.status)
+        self.assertEqual("invalid_withheld", cross_partition.status)
+
+    def test_c_minus_b_population_is_independent(self) -> None:
+        rows = [self._row(treatment=treatment) for treatment in ("A", "B", "C")]
+        controls = {
+            row.identity(): {
+                "delegation_frame": treatment,
+                "pair_selection": "fixed" if treatment in {"A", "B"} else "other",
+                "prompt": "same",
+            }
+            for row, treatment in zip(rows, ("A", "B", "C"), strict=True)
+        }
+        b_minus_a = build_pairwise_comparison(rows[:2], "b_minus_a", controls)
+        c_minus_b = build_pairwise_comparison(rows[1:], "c_minus_b", controls)
+        self.assertEqual("measured", b_minus_a.result.state)
+        self.assertEqual("measured", c_minus_b.result.state)
+        self.assertNotEqual(b_minus_a.population_id, c_minus_b.population_id)
+        self.assertNotEqual(b_minus_a.population_sha256, c_minus_b.population_sha256)
+        self.assertNotEqual(b_minus_a.result.denominator, c_minus_b.result.denominator)
+
     def test_red_metrics_preserve_applicability_and_separate_denominators(self) -> None:
         bundle = build_red_evaluation(EXPERIMENT)
         packet = build_evaluation_packet(bundle)
