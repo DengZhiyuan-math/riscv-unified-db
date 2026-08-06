@@ -359,7 +359,7 @@ Plans:
 
 ### Phase 6: Partition-Aware Ablation and Metamorphic Evaluation
 
-**Goal:** The reviewer can evaluate the frozen branch at case level while preserving every metric, treatment, partition, and denominator boundary.
+**Goal:** As a reviewer, I want to evaluate the frozen branch at case level, so that every metric, treatment, partition, and denominator boundary remains preserved.
 **Mode:** mvp
 **Depends on:** Phase 5
 **Requirements:** TS-06, TS-13, H1-02, H1-03, H1-04, H2-03, H2-04
@@ -373,7 +373,7 @@ Plans:
   4. PairHit@K is reported only for preregistered relevance judgments, with retrieved pair IDs per case; strict, auxiliary, metamorphic, and repeat-disagreement outputs retain separate IDs and denominators.
   5. On Red, the reviewer receives only the deterministic measurement and construction-feasibility evaluation, with no absent model outputs presented as experimental zeros or extraction evidence.
 
-**Plans:** 5 plans
+**Plans:** 10 plans (5 original plans and 5 forward-only gap-closure successors)
 
 Plans:
 **Wave 1**
@@ -392,6 +392,26 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 
 - [ ] 06-05: Collect the separate human evaluation decision over the exact immutable packet/readiness identities and publish its closed canonical record without widening authority.
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 06-06: Repair root-derived provenance validation, exact component membership, and stable runtime diagnostics without changing generation-001.
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 06-07: Close verified-join and intervention-score bypasses, then freeze the forward-only generation-002 policy.
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 06-08: Publish and independently replay the immutable generation-002 packet, report, and decision-free readiness receipt.
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [ ] 06-09: Obtain an explicit human decision over the exact generation-002 hashes; approval is never inferred.
+
+**Wave 9** *(blocked on Wave 8 completion)*
+
+- [ ] 06-10: Publish the canonical generation-002 decision and derive either clean closure or durable still-open blockers.
 
 ### Phase 7: Reproducible Feasibility Conclusion
 
