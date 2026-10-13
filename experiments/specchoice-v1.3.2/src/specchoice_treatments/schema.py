@@ -273,14 +273,14 @@ def _load_frame_advisory_patterns_v1() -> tuple[dict[str, object], ...]:
     except (UnicodeDecodeError, ValueError) as error:
         raise RuntimeError("FRAME_ADVISORY_CONFIG_INVALID") from error
     if canonical_json_bytes(config) != raw:
-        raise TypeError("FRAME_ADVISORY_CONFIG_INVALID")
+        raise RuntimeError("FRAME_ADVISORY_CONFIG_INVALID")
     if not isinstance(config, dict) or set(config) != _ADVISORY_CONFIG_KEYS:
-        raise TypeError("FRAME_ADVISORY_CONFIG_INVALID")
+        raise RuntimeError("FRAME_ADVISORY_CONFIG_INVALID")
     if config.get("schema_version") != _ADVISORY_SCHEMA_VERSION:
         raise RuntimeError("FRAME_ADVISORY_CONFIG_INVALID")
     patterns = config.get("patterns")
     if not isinstance(patterns, list):
-        raise TypeError("FRAME_ADVISORY_CONFIG_INVALID")
+        raise RuntimeError("FRAME_ADVISORY_CONFIG_INVALID")
 
     pattern_ids: set[str] = set()
     validated: list[dict[str, object]] = []
